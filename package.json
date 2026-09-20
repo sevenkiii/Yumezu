@@ -17,6 +17,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,yml,yaml,css,html}\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "demo": "vitest run test/demo.test.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

@@ -4,7 +4,7 @@
 
 > **随机平面图 + 3v3 角色战斗 + 功能牌 + 交替行动**
 
-当前状态：**项目骨架已初始化，尚未开始实现**。
+当前状态：**Phase 1 已完成** —— 无 UI 的纯核心引擎可以完整跑完一局 3v3（随机阵容、盲选部署、交替行动、移动 / 攻击 / 技能 / 功能牌、CD、陷阱与封路、胜负判定、Action Log）。
 
 ## 文档
 
@@ -28,6 +28,7 @@ npm run lint
 npm run format:check
 npm run typecheck
 npm run test
+npm run demo    # 跑完一整局 3v3，输出阵容、胜者与行动统计
 ```
 
 > `npm run dev` / `npm run build` 需要 UI 入口（`index.html`），会在 Phase 4 建立。
@@ -37,23 +38,23 @@ npm run test
 
 ```
 src/
-├── core/        GameState / GameEngine / Action / Effect / Event / RNG
-├── map/         图结构、地图生成、Validator、出生点选择
-├── characters/  角色定义（每名角色一个文件）
-├── cards/       功能牌定义（每张牌一个文件）
-├── rules/       移动 / 战斗 / 回合规则
+├── core/        GameState / GameEngine / Action / Effect / Event / RNG / View / hash
+├── map/         Graph（图与距离）、fixtures（Phase 1 固定地图）、SpawnGenerator
+├── characters/  Character / Skill + definitions/（每名角色一个文件）
+├── cards/       Card / CardPool + definitions/（每张牌一个文件）
+├── rules/       Targeting / Movement / Combat / EffectResolver / Turn / Action
 ├── ai/          自动对局与 AI（Phase 6，暂缓）
 ├── ui/          React + SVG 界面（Phase 4）
 └── server/      WebSocket 联机（Phase 7）
-test/            单元测试与对局模拟
+test/            单元测试、黄金测试与随机对局 demo（support/ 放夹具与临时决策器）
 ```
 
 ## 开发阶段
 
 | Phase | 内容 |
 |---|---|
-| 1 | 纯核心引擎（无 UI，能完整模拟一局 3v3） |
-| 2 | 地图生成（平面图、Validator、出生点） |
+| 1 | ~~纯核心引擎~~ **已完成**：无 UI，能完整模拟一局 3v3 |
+| 2 | 地图生成（随机平面图、Validator、出生点选择）—— 下一步 |
 | 3 | 6 名角色与 11 张功能牌 |
 | 4 | 网页 UI（地图、角色、手牌、部署、合法行动高亮） |
 | 5 | 测试与模拟（固定 seed、胜率统计、黄金测试） |

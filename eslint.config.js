@@ -71,6 +71,13 @@ export default tseslint.config(
     },
   },
 
+  {
+    files: ['test/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
   // 必须放在最后：关闭所有与 Prettier 冲突的格式化规则。
   prettier,
 );

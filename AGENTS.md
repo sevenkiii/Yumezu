@@ -42,4 +42,7 @@ CI 依次执行 lint → format:check → typecheck → test。改动后请本�
 
 ## 当前状态
 
-骨架已初始化，**尚未开始实现**。下一步是 Phase 1：无 UI 的纯核心引擎。
+**Phase 1 已完成**：`src/core`、`src/map`、`src/characters`、`src/cards`、`src/rules` 与 `test/` 均已实现，
+59 个测试通过，`npm run demo` 能跑完一整局 3v3。
+
+下一步是 Phase 2：把 `src/map/fixtures.ts` 的固定网格换成真正的随机平面图生成器（Delaunay + MST + Validator）与出生点选择。

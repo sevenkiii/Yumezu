@@ -1,19 +1,19 @@
 # src/characters — 角色
 
-角色系统的类型、技能框架与 6 名角色的定义。
+角色类型、技能接口与 6 名角色的定义。
 
-## 计划中的文件
+## 文件
 
 | 文件 | 职责 |
 |---|---|
-| `Character.ts` | 角色类型、技能状态、状态（Status）的通用定义 |
-| `Skill.ts` | 技能的通用接口：合法性检查与效果生成 |
+| `Character.ts` | `CharacterDefinition` 与角色实例构造 |
+| `Skill.ts` | 技能接口：`listChoices`（合法参数）+ `buildEffects`（生成效果） |
 | `definitions/` | **每名角色一个文件**（见该目录 README） |
 
 ## 关键约定
 
-- 角色的面板数值与技能文本以 `RULES.md` §11 为准。
+- 面板数值与技能文本以 `RULES.md` §11 为准。
 - 技能只产生 `Effect`，不直接改动状态。
-- 技能必须至少产生一个真实效果，否则对应 Action 非法。
+- `listChoices` 为空 = 该技能此刻不可用（必须至少产生一个真实效果）。
 
-> 状态：尚未实现（Phase 3）。
+> 状态：已实现（Phase 1，6 名角色）。
