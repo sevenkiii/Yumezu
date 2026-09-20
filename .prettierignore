@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+package-lock.json
+
+# 设计稿与讨论记录：本地保留，不参与格式化（实现依据见 RULES.md）
+statement.md
+characters.md
+cards.md
+dev.md
+clarify.md
+answer.md

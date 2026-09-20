@@ -1,0 +1,27 @@
+# ---- 依赖与产物 ----
+node_modules/
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# ---- 日志与环境 ----
+*.log
+npm-debug.log*
+.env
+.env.*
+!.env.example
+
+# ---- 编辑器与系统 ----
+.DS_Store
+Thumbs.db
+.idea/
+
+# ---- 设计稿与讨论记录（仅本地保留）----
+# 这些文档不进入版本库；实现与测试的唯一依据是 RULES.md。
+/statement.md
+/characters.md
+/cards.md
+/dev.md
+/clarify.md
+/answer.md
