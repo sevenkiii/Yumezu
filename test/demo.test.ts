@@ -1,22 +1,20 @@
 /**
- * Phase 1 验收 demo：在没有 UI 的情况下，用代码完整跑完一局 3v3。
+ * 验收 demo：在没有 UI 的情况下，用代码完整跑完一局 3v3。
  *
+ * 现在走的是正式入口：mapSeed → 随机平面图 + 出生点 → gameSeed → 完整对局。
  * 单独运行：npx vitest run test/demo.test.ts
  */
 
 import { describe, expect, it } from 'vitest';
 
-import { createGame, isFinished } from '../src/core/GameEngine';
-import { PHASE1_MAP, PHASE1_SPAWN_CENTERS } from '../src/map/fixtures';
+import { createGameFromSeed, isFinished } from '../src/core/GameEngine';
 import { createRandomAgent, playGame } from './support/randomAgent';
 
-describe('demo：完整对局', () => {
-  it('能跑完一局并输出胜者与统计', () => {
-    const state = createGame({
+describe('demo：随机地图 + 完整对局', () => {
+  it('能生成地图、跑完一局并输出胜者与统计', () => {
+    const state = createGameFromSeed({
       mapSeed: 'demo-map',
       gameSeed: 'demo-game',
-      graph: PHASE1_MAP,
-      spawnCenters: { P1: PHASE1_SPAWN_CENTERS.P1, P2: PHASE1_SPAWN_CENTERS.P2 },
       maxTurns: 500,
     });
 
@@ -26,7 +24,15 @@ describe('demo：完整对局', () => {
 
     const survivors = log.state.characters.filter((character) => character.alive);
     const lines = [
-      '--- Phase 1 demo ---',
+      '--- 夢図 demo（Phase 1 + Phase 2）---',
+      '地图：节点 ' +
+        log.state.map.graph.vertices.length +
+        '，边 ' +
+        log.state.map.graph.edges.length +
+        '，出生中心 ' +
+        log.state.spawn.P1.center +
+        '/' +
+        log.state.spawn.P2.center,
       '阵容：P1=' + log.state.roster.P1.join('/') + '  P2=' + log.state.roster.P2.join('/'),
       '先手：' + log.state.firstPlayer,
       '结果：' + JSON.stringify(log.state.result),

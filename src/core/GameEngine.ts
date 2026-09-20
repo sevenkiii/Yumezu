@@ -14,6 +14,7 @@ import { cardDefinition } from '../cards/Card';
 import { removeCardFromHand } from '../cards/CardPool';
 import { characterDefinition } from '../characters/Character';
 import type { Graph } from '../map/Graph';
+import { generateMap, type MapGenerationParams } from '../map/MapGenerator';
 import { computeSpawnInfo } from '../map/SpawnGenerator';
 import type { ValidationResult } from '../rules/ActionRules';
 import {
@@ -85,6 +86,26 @@ export function createGame(options: CreateGameOptions): GameState {
   initialiseRoster(state, ignored);
   initialiseHands(state, ignored);
   return state;
+}
+
+/** 直接由 mapSeed 生成地图并开局（正式对局使用这个入口）。 */
+export interface CreateGameFromSeedOptions {
+  readonly mapSeed: string;
+  readonly gameSeed: string;
+  /** 覆盖地图生成参数；省略时使用 DEFAULT_MAP_PARAMS。 */
+  readonly mapParams?: Partial<MapGenerationParams>;
+  readonly maxTurns?: number | null;
+}
+
+export function createGameFromSeed(options: CreateGameFromSeedOptions): GameState {
+  const generated = generateMap(options.mapSeed, options.mapParams);
+  return createGame({
+    mapSeed: options.mapSeed,
+    gameSeed: options.gameSeed,
+    graph: generated.graph,
+    spawnCenters: generated.spawnCenters,
+    maxTurns: options.maxTurns ?? null,
+  });
 }
 
 /** 深拷贝状态。GameState 全部是可序列化的纯数据，因此 structuredClone 足够。 */

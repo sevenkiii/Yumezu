@@ -14,9 +14,9 @@ export interface Agent {
 }
 
 /**
- * 大部分时候优先选择进攻性行动（攻击 / 专属技能 / 功能牌）。
+ * 大部分时候优先选择"指向敌方"的行动（普通攻击 / 专属技能 / 指定敌人的功能牌）。
  * 纯粹均匀随机会被大量「移动 / 瞬步 / 陷阱」选项淹没，导致对局几乎不可能分出胜负；
- * 这个倾向让 Phase 1 的 demo 能跑出真正的击杀，同时保持完全确定性。
+ * 这个倾向让 demo 能跑出真正的击杀，同时保持完全确定性。
  */
 export function createRandomAgent(seed: string): Agent {
   let stream = createRngStream(seed, 'cards');
@@ -27,8 +27,8 @@ export function createRandomAgent(seed: string): Agent {
 
       const roll = nextIndex(stream, 100);
       stream = roll.next;
-      const preferAggressive = roll.value < 70;
-      const aggressive = actions.filter(isAggressive);
+      const preferAggressive = roll.value < 85;
+      const aggressive = actions.filter((action) => isAggressive(state, action));
       const pool = preferAggressive && aggressive.length > 0 ? aggressive : actions;
 
       const choose = nextIndex(stream, pool.length);
@@ -38,8 +38,14 @@ export function createRandomAgent(seed: string): Agent {
   };
 }
 
-function isAggressive(action: Action): boolean {
-  return action.type === 'ATTACK' || action.type === 'USE_SKILL' || action.type === 'USE_CARD';
+/** "指向敌方"的行动：普通攻击、专属技能，或对敌方角色/节点的功能牌。 */
+function isAggressive(state: GameState, action: Action): boolean {
+  if (action.type === 'ATTACK' || action.type === 'USE_SKILL') return true;
+  if (action.type !== 'USE_CARD') return false;
+  const choice = action.choice;
+  if (choice.kind !== 'SINGLE_TARGET' && choice.kind !== 'MOVE_TO') return false;
+  const target = state.characters.find((character) => character.id === choice.targetId);
+  return target !== undefined && target.owner !== action.player;
 }
 
 export interface GameLog {

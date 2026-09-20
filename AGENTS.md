@@ -42,7 +42,8 @@ CI 依次执行 lint → format:check → typecheck → test。改动后请本�
 
 ## 当前状态
 
-**Phase 1 已完成**：`src/core`、`src/map`、`src/characters`、`src/cards`、`src/rules` 与 `test/` 均已实现，
-59 个测试通过，`npm run demo` 能跑完一整局 3v3。
+**Phase 1 与 Phase 2 已完成**：核心引擎、6 名角色、11 张功能牌、随机地图生成与出生点选择均已实现，
+10 个测试文件 / 70 个测试通过，`npm run demo` 走"mapSeed → 生成地图 → 完整对局"的正式入口。
 
-下一步是 Phase 2：把 `src/map/fixtures.ts` 的固定网格换成真正的随机平面图生成器（Delaunay + MST + Validator）与出生点选择。
+下一步是 Phase 4（React + SVG 网页 UI）；Phase 3 的角色 / 卡牌内容已在 Phase 1 一并实现，
+之后主要做内容调优。`src/ai`、`src/ui`、`src/server` 仍是空目录（只有 README）。
