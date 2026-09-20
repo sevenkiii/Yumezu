@@ -11,6 +11,8 @@
 
 `npm run demo` 现在走的就是"地图 seed → 生成地图 → 一局完整对局"的正式入口。
 
+- Phase 5（部分）：批量对局统计工具已可用（`npm run simulate`）；完整的平衡结论要等更聪明的 AI（Phase 6）。
+
 ## 文档
 
 | 文件 | 作用 |
@@ -34,6 +36,7 @@ npm run format:check
 npm run typecheck
 npm run test
 npm run demo    # 跑完一整局 3v3，输出阵容、胜者与行动统计
+npm run simulate -- --games 200 --seed base   # Phase 5 统计：胜率 / 长度 / 角色与卡牌使用率
 ```
 
 > `npm run dev` / `npm run build` 需要 UI 入口（`index.html`），会在 Phase 4 建立。
@@ -51,6 +54,7 @@ src/
 ├── ai/          自动对局与 AI（Phase 6，暂缓）
 ├── ui/          React + SVG 界面（Phase 4）
 └── server/      WebSocket 联机（Phase 7）
+tools/            开发脚本（用 Vite 运行 TS 的 run-ts.mjs）
 test/            单元测试、黄金测试与随机对局 demo（support/ 放夹具与临时决策器）
 ```
 
@@ -62,6 +66,6 @@ test/            单元测试、黄金测试与随机对局 demo（support/ 放�
 | 2 | ~~地图生成~~ **已完成**：随机平面图 + Validator + 出生点选择 |
 | 3 | 6 名角色与 11 张功能牌（已在 Phase 1 一并实现，后续做内容调优） |
 | 4 | 网页 UI（地图、角色、手牌、部署、合法行动高亮） |
-| 5 | 测试与模拟（固定 seed、胜率统计、黄金测试） |
+| 5 | 测试与模拟（固定 seed、黄金测试已就绪；胜率统计工具已可用） |
 | 6 | AI（暂缓） |
 | 7 | 联机（WebSocket、服务器权威、断线重连） |

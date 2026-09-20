@@ -38,6 +38,7 @@ export type GameEvent =
       readonly cardId: CardId;
       readonly handSize: number;
     }
+  | { readonly type: 'CARD_PLAYED'; readonly player: PlayerId; readonly cardId: CardId }
   | { readonly type: 'CARD_DISCARDED'; readonly player: PlayerId; readonly cardId: CardId }
   | { readonly type: 'EDGE_BLOCK_EXPIRED'; readonly edge: EdgeKey; readonly owner: PlayerId }
   | {

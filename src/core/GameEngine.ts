@@ -114,18 +114,28 @@ export function cloneState(state: GameState): GameState {
 }
 
 /** 纯查询：先清掉已到期的封锁，再校验。 */
-export function validateAction(state: GameState, action: Action): ValidationResult {
+/**
+ * 查询用的状态视图：只有在确实存在已到期封锁时才克隆并清理。
+ * 这让 getLegalActions / validateAction 在绝大多数调用中不需要深拷贝。
+ */
+function prunableView(state: GameState): GameState {
+  const needsPruning = state.map.blockedEdges.some(
+    (blocked) => blocked.expiresAtTurnIndex <= state.turnIndex,
+  );
+  if (!needsPruning) return state;
   const draft = cloneState(state);
   pruneExpiredBlocks(draft, []);
-  return validateActionInternal(draft, action);
+  return draft;
+}
+
+export function validateAction(state: GameState, action: Action): ValidationResult {
+  return validateActionInternal(prunableView(state), action);
 }
 
 /** 当前玩家的全部合法行动。 */
 export function getLegalActions(state: GameState): Action[] {
   if (state.phase === 'FINISHED') return [];
-  const draft = cloneState(state);
-  pruneExpiredBlocks(draft, []);
-  return enumerateLegalActions(draft);
+  return enumerateLegalActions(prunableView(state));
 }
 
 export function isFinished(state: GameState): boolean {
@@ -256,6 +266,7 @@ function performBattleAction(state: GameState, action: Action, events: GameEvent
     case 'USE_CARD': {
       const card = removeCardFromHand(state, action.player, action.handCardId);
       if (card === null) return;
+      events.push({ type: 'CARD_PLAYED', player: action.player, cardId: card.cardId });
       const definition = cardDefinition(card.cardId);
       events.push(
         ...resolveEffects(state, definition.buildEffects(state, action.player, action.choice)),

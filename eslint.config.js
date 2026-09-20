@@ -72,6 +72,16 @@ export default tseslint.config(
   },
 
   {
+    // tools/ 下的脚本是 Node ESM 脚本，需要 Node 全局
+    files: ['tools/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { process: 'readonly', console: 'readonly' },
+    },
+  },
+
+  {
     files: ['test/**/*.ts'],
     rules: {
       'no-console': 'off',

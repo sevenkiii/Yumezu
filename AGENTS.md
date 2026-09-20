@@ -18,6 +18,8 @@ npm run format:check   # prettier --check（CI 使用）
 npm run typecheck      # tsc --noEmit
 npm run test           # vitest run
 npm run test:watch
+npm run demo           # 跑完一整局 3v3
+npm run simulate -- --games 200 --seed base   # Phase 5 统计工具
 ```
 
 CI 依次执行 lint → format:check → typecheck → test。改动后请本地跑通。
@@ -39,11 +41,14 @@ CI 依次执行 lint → format:check → typecheck → test。改动后请本�
 - TypeScript `strict` + `noUncheckedIndexedAccess`；不要使用 `any`，需要时先讨论。
 - UI 文案默认中文，但必须通过 i18n 接口，不要在组件里硬编码字符串。
 - 模块划分参照「每个角色一个文件、每张功能牌一个文件」的粒度。
+- 工具脚本放在 `tools/`，用 `node tools/run-ts.mjs <入口.ts>` 运行（借 Vite 转 TS，不要再引入 tsx / ts-node）。
 
 ## 当前状态
 
 **Phase 1 与 Phase 2 已完成**：核心引擎、6 名角色、11 张功能牌、随机地图生成与出生点选择均已实现，
 10 个测试文件 / 70 个测试通过，`npm run demo` 走"mapSeed → 生成地图 → 完整对局"的正式入口。
 
-下一步是 Phase 4（React + SVG 网页 UI）；Phase 3 的角色 / 卡牌内容已在 Phase 1 一并实现，
-之后主要做内容调优。`src/ai`、`src/ui`、`src/server` 仍是空目录（只有 README）。
+Phase 5 的统计工具（`test/support/simulate.ts` + `npm run simulate`）已就绪，11 个测试文件 / 74 个测试通过。
+
+下一步是 Phase 4（React + SVG 网页 UI，设计仍在讨论中）；Phase 3 的角色 / 卡牌内容已在 Phase 1 一并实现。
+`src/ai`、`src/ui`、`src/server` 仍是空目录（只有 README）。

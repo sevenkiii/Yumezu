@@ -1,6 +1,6 @@
 # test — 测试与模拟
 
-所有单元测试与自动对局模拟（Vitest，node 环境）。
+所有单元测试与自动对局模拟（Vitest，node 环境），以及 Phase 5 的统计工具。
 
 ## 文件
 
@@ -16,8 +16,26 @@
 | `engine.test.ts` | 部署、回合结构、CD、胜负、视图、合法行动枚举 |
 | `golden.test.ts` | 固定 seed 的整局一致性（状态哈希） |
 | `demo.test.ts` | 验收 demo：随机地图 + 完整跑完一局 |
+| `simulation.test.ts` | 统计工具的可复现性与统计口径校验 |
+| `simulate.ts` | **统计工具 CLI**（用 `npm run simulate` 运行，不是测试） |
+| `support/simulate.ts` | 批量对局与统计聚合（胜率 / 长度 / 角色 / 卡牌） |
 | `support/fixtures.ts` | 测试夹具：快速搭出可复现的中局状态 |
-| `support/randomAgent.ts` | 随机合法行动决策器（demo 用的临时对局驱动） |
+| `support/randomAgent.ts` | 随机合法行动决策器（demo 与统计工具共用） |
+
+## 统计工具
+
+```bash
+npm run simulate -- --games 200 --seed base --maxTurns 300
+npm run simulate -- --games 50 --json        # 输出 JSON（不含逐局明细）
+npm run simulate -- --games 50 --json-full   # 输出 JSON（含逐局明细）
+```
+
+输出内容：双方胜率、平局率、先手胜率、结束方式、对局长度（均值 / 中位数 / 极值）、
+各角色出场与胜率、技能使用次数、各功能牌的抽到 / 打出 / 弃掉与使用率。
+
+**注意**：这些数字反映的是当前随机决策器的行为，不是人类对局的平衡结论。
+随机决策器有 85% 的概率优先选择"指向敌方"的行动，因此进攻型卡牌（排斥 / 标记 / 封技）
+的使用率会显著高于防御型卡牌（急救 / 充能）。要看平衡，需要先有更强的 AI（Phase 6）。
 
 ## 关键约定
 
@@ -25,4 +43,4 @@
 - 涉及随机的测试必须固定 seed。
 - 规则变更时先更新 `RULES.md`，再更新对应测试。
 
-> 状态：10 个测试文件 / 70 个测试通过（Phase 1 + Phase 2）。
+> 状态：11 个测试文件 / 74 个测试通过。
