@@ -8,8 +8,6 @@ import type { CardDefinition } from '../Card';
 
 export const shield: CardDefinition = {
   id: 'Shield',
-  name: '护盾',
-  description: '选择一名己方角色，使其获得【护盾】。',
   category: 'DEFENSE',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     return aliveAllies(state, player)

@@ -11,8 +11,6 @@ import type { CardDefinition } from '../Card';
 
 export const firstAid: CardDefinition = {
   id: 'FirstAid',
-  name: '急救',
-  description: '选择一名己方角色，回复 3 点 HP。',
   category: 'DEFENSE',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     return aliveAllies(state, player)

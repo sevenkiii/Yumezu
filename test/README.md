@@ -17,6 +17,8 @@
 | `golden.test.ts` | 固定 seed 的整局一致性（状态哈希） |
 | `demo.test.ts` | 验收 demo：随机地图 + 完整跑完一局 |
 | `simulation.test.ts` | 统计工具的可复现性与统计口径校验 |
+| `ui-interaction.test.ts` | 交互层：选中 → 瞄准 → 执行的每种流程产出的 Action 都必须合法 |
+| `ui-render.test.tsx` | 渲染冒烟测试：真实状态喂进组件不报错，关键信息确实出现（用 react-dom/server，无需 jsdom） |
 | `simulate.ts` | **统计工具 CLI**（用 `npm run simulate` 运行，不是测试） |
 | `support/simulate.ts` | 批量对局与统计聚合（胜率 / 长度 / 角色 / 卡牌） |
 | `support/fixtures.ts` | 测试夹具：快速搭出可复现的中局状态 |
@@ -43,4 +45,4 @@ npm run simulate -- --games 50 --json-full   # 输出 JSON（含逐局明细）
 - 涉及随机的测试必须固定 seed。
 - 规则变更时先更新 `RULES.md`，再更新对应测试。
 
-> 状态：11 个测试文件 / 74 个测试通过。
+> 状态：13 个测试文件 / 101 个测试通过。

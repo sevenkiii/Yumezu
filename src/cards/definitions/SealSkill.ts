@@ -8,8 +8,6 @@ import type { CardDefinition } from '../Card';
 
 export const sealSkill: CardDefinition = {
   id: 'SealSkill',
-  name: '封技',
-  description: '选择一名敌方角色，使其获得【封技】。',
   category: 'CONTROL',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     return aliveEnemies(state, player)

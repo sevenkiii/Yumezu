@@ -12,8 +12,6 @@ import type { CardDefinition } from '../Card';
 
 export const blockRoad: CardDefinition = {
   id: 'BlockRoad',
-  name: '封路',
-  description: '选择地图上的一条边，暂时封锁它。',
   category: 'MAP',
   listChoices(state: GameState, _player: PlayerId): CardChoice[] {
     const blocked = blockedEdgeSet(state);

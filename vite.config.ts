@@ -15,7 +15,7 @@ export default defineConfig({
     // 后续出现 React 组件测试时，可在对应文件顶部用 `// @vitest-environment jsdom` 覆盖。
     environment: 'node',
     globals: true,
-    include: ['test/**/*.test.ts'],
+    include: ['test/**/*.test.{ts,tsx}'],
     // 自动对局模拟需要跑完整局，默认 5s 超时不够
     testTimeout: 20000,
     passWithNoTests: true,

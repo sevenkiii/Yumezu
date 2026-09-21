@@ -8,8 +8,6 @@ import type { CardDefinition } from '../Card';
 
 export const assault: CardDefinition = {
   id: 'Assault',
-  name: '强袭',
-  description: '选择一名己方角色，使其获得【强袭】。',
   category: 'ATTACK',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     return aliveAllies(state, player)

@@ -11,8 +11,6 @@ import type { CardDefinition } from '../Card';
 
 export const recharge: CardDefinition = {
   id: 'Recharge',
-  name: '充能',
-  description: '选择一名己方角色，使其一个正在冷却的技能剩余 CD 减少 1。',
   category: 'TEMPO',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     return aliveAllies(state, player)

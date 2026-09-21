@@ -13,8 +13,6 @@ import type { CardDefinition } from '../Card';
 
 export const trap: CardDefinition = {
   id: 'Trap',
-  name: '陷阱',
-  description: '在一个未被占据的节点放置陷阱：第一个进入该节点的敌方角色受到 2 点伤害。',
   category: 'MAP',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     const owned = state.map.traps.filter((trap) => trap.owner === player).length;

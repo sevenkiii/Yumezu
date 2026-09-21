@@ -14,8 +14,6 @@ import type { SkillDefinition } from '../Skill';
 
 const skill: SkillDefinition = {
   id: 'Globe',
-  name: '地球仪',
-  description: '对距离不超过 2 的一名敌方角色造成 4 点伤害。',
   cd: 2,
   listChoices(state: GameState, actor: CharacterState): SkillChoice[] {
     return enemiesWithin(state, actor.owner, actor.position, GLOBE_RANGE).map((target) => ({
@@ -38,7 +36,6 @@ const skill: SkillDefinition = {
 
 export const nana: CharacterDefinition = {
   typeId: 'Nana',
-  name: 'Nana',
   hp: 10,
   attackDamage: 2,
   moveRange: 2,

@@ -23,6 +23,7 @@ import {
 } from '../rules/ActionRules';
 import { resolveEffects } from '../rules/EffectResolver';
 import {
+  applyRandomDeployment,
   beginTurn,
   checkGameEnd,
   endTurn,
@@ -52,6 +53,12 @@ export interface CreateGameOptions {
   readonly spawnCenters: Record<PlayerId, VertexId>;
   /** 可选回合上限；省略表示不设上限。 */
   readonly maxTurns?: number | null;
+  /**
+   * 部署方式：
+   *  - 'random'（默认）：核心按 gameSeed 随机决定站位，开局直接进入战斗；
+   *  - 'manual'：保留 DEPLOY 阶段，由玩家自己提交（测试与将来的手动部署用）。
+   */
+  readonly deployment?: 'random' | 'manual';
 }
 
 export function createGame(options: CreateGameOptions): GameState {
@@ -85,6 +92,15 @@ export function createGame(options: CreateGameOptions): GameState {
   const ignored: GameEvent[] = [];
   initialiseRoster(state, ignored);
   initialiseHands(state, ignored);
+
+  if (options.deployment !== 'manual') {
+    applyRandomDeployment(state, ignored);
+    state.phase = 'BATTLE';
+    state.currentPlayer = firstPlayer;
+    state.turnIndex = 0;
+    beginTurn(state, firstPlayer, ignored);
+  }
+
   return state;
 }
 
@@ -95,6 +111,8 @@ export interface CreateGameFromSeedOptions {
   /** 覆盖地图生成参数；省略时使用 DEFAULT_MAP_PARAMS。 */
   readonly mapParams?: Partial<MapGenerationParams>;
   readonly maxTurns?: number | null;
+  /** 见 CreateGameOptions.deployment；默认随机部署。 */
+  readonly deployment?: 'random' | 'manual';
 }
 
 export function createGameFromSeed(options: CreateGameFromSeedOptions): GameState {
@@ -105,6 +123,7 @@ export function createGameFromSeed(options: CreateGameFromSeedOptions): GameStat
     graph: generated.graph,
     spawnCenters: generated.spawnCenters,
     maxTurns: options.maxTurns ?? null,
+    deployment: options.deployment,
   });
 }
 

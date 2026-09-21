@@ -14,9 +14,7 @@ export type CardCategory = 'ATTACK' | 'DEFENSE' | 'MOVEMENT' | 'CONTROL' | 'MAP'
 
 export interface CardDefinition {
   readonly id: CardId;
-  /** 中文牌名，例如「急救」。 */
-  readonly name: string;
-  readonly description: string;
+  // 面向玩家的牌名与描述不在这里：见 src/ui/i18n。
   readonly category: CardCategory;
   /**
    * 列出当前所有合法参数。

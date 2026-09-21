@@ -8,9 +8,6 @@ import type { SkillDefinition } from '../Skill';
 
 const skill: SkillDefinition = {
   id: 'ShadowReturn',
-  name: '影返',
-  description:
-    '在当前位置留下影标记：直到触发或被重新使用前，第一次受到的伤害减 1，随后立即返回影标记。',
   cd: 2,
   listChoices(_state: GameState, _actor: CharacterState): SkillChoice[] {
     return [{ kind: 'NONE' as const }];
@@ -22,7 +19,6 @@ const skill: SkillDefinition = {
 
 export const mikage: CharacterDefinition = {
   typeId: 'Mikage',
-  name: 'Mikage',
   hp: 12,
   attackDamage: 2,
   moveRange: 1,

@@ -11,10 +11,7 @@ import type { CharacterState, GameState, SkillId } from '../core/GameState';
 
 export interface SkillDefinition {
   readonly id: SkillId;
-  /** 中文技能名，例如「地球仪」。 */
-  readonly name: string;
-  /** 面向玩家的效果描述。 */
-  readonly description: string;
+  // 面向玩家的技能名与描述不在这里：见 src/ui/i18n（引擎只保留 id）。
   /** 使用后的冷却回合数。 */
   readonly cd: number;
   /**

@@ -16,8 +16,6 @@ import type { SkillDefinition } from '../Skill';
 
 const skill: SkillDefinition = {
   id: 'MeltyLand',
-  name: 'Melty Land',
-  description: '以自身为中心、距离不超过 1 的所有其他角色：友方回复 2 HP，敌方受到 2 点伤害。',
   cd: 2,
   listChoices(state: GameState, actor: CharacterState): SkillChoice[] {
     const affected = otherCharactersWithin(state, actor, MELTY_LAND_RANGE);
@@ -44,7 +42,6 @@ const skill: SkillDefinition = {
 
 export const melty: CharacterDefinition = {
   typeId: 'Melty',
-  name: 'Melty',
   hp: 10,
   attackDamage: 1,
   moveRange: 2,

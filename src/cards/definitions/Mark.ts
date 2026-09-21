@@ -8,8 +8,6 @@ import type { CardDefinition } from '../Card';
 
 export const mark: CardDefinition = {
   id: 'Mark',
-  name: '标记',
-  description: '选择一名敌方角色，使其获得【标记】。',
   category: 'ATTACK',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     return aliveEnemies(state, player)

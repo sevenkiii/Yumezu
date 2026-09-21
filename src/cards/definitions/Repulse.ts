@@ -10,8 +10,6 @@ import type { CardDefinition } from '../Card';
 
 export const repulse: CardDefinition = {
   id: 'Repulse',
-  name: '排斥',
-  description: '选择一名敌方角色，将其移动到相邻的一个合法节点。',
   category: 'MOVEMENT',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     const blocked = blockedEdgeSet(state);

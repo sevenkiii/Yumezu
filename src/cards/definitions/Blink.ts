@@ -12,8 +12,6 @@ import type { CardDefinition } from '../Card';
 
 export const blink: CardDefinition = {
   id: 'Blink',
-  name: '瞬步',
-  description: '选择一名己方角色，将其移动至距离不超过 3 的节点。',
   category: 'MOVEMENT',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     const choices: CardChoice[] = [];

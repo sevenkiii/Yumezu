@@ -16,13 +16,18 @@ import { hashState } from '../src/core/hash';
 import { PHASE1_MAP, PHASE1_SPAWN_CENTERS } from '../src/map/fixtures';
 import { createBattleState } from './support/fixtures';
 
-function newGame(gameSeed = 'seed-a', maxTurns: number | null = null): GameState {
+function newGame(
+  gameSeed = 'seed-a',
+  maxTurns: number | null = null,
+  deployment: 'random' | 'manual' = 'random',
+): GameState {
   return createGame({
     mapSeed: 'map-a',
     gameSeed,
     graph: PHASE1_MAP,
     spawnCenters: { P1: PHASE1_SPAWN_CENTERS.P1, P2: PHASE1_SPAWN_CENTERS.P2 },
     maxTurns,
+    deployment,
   });
 }
 
@@ -45,14 +50,36 @@ describe('开局与确定性', () => {
     expect(state.characters.filter((item) => item.owner === 'P1')).toHaveLength(3);
     expect(state.characters.filter((item) => item.owner === 'P2')).toHaveLength(3);
     expect(new Set(state.roster.P1).size).toBe(3);
-    expect(state.players.P1.hand).toHaveLength(3);
-    expect(state.phase).toBe('DEPLOY');
+    // 开局即完成随机部署，因此先手方已经执行过"回合开始抽牌"
+    const second = state.firstPlayer === 'P1' ? 'P2' : 'P1';
+    expect(state.players[state.firstPlayer].hand).toHaveLength(4);
+    expect(state.players[second].hand).toHaveLength(3);
+    expect(state.phase).toBe('BATTLE');
   });
 });
 
 describe('部署', () => {
-  it('双方依次提交，完成后同时公开并开始先手回合', () => {
-    let state = newGame();
+  it('默认由核心随机部署：站位在各自出生区域内且互不重复', () => {
+    const state = newGame();
+    expect(state.phase).toBe('BATTLE');
+    for (const player of ['P1', 'P2'] as const) {
+      const own = state.characters.filter((item) => item.owner === player);
+      const region = state.spawn[player].region;
+      expect(own).toHaveLength(3);
+      for (const character of own) {
+        expect(region).toContain(character.position);
+      }
+      expect(new Set(own.map((item) => item.position)).size).toBe(3);
+    }
+    expect(state.deployment.P1).not.toBeNull();
+    expect(state.deployment.P2).not.toBeNull();
+    expect(state.turnIndex).toBe(0);
+    expect(state.players[state.firstPlayer].hand).toHaveLength(4);
+  });
+
+  it('manual 模式保留 DEPLOY 阶段（双方提交后开始先手回合）', () => {
+    let state = newGame('seed-a', null, 'manual');
+    expect(state.phase).toBe('DEPLOY');
     state = applyAction(state, getLegalActions(state)[0] as Action).state;
     expect(state.phase).toBe('DEPLOY');
     expect(state.currentPlayer).toBe('P2');
@@ -66,7 +93,7 @@ describe('部署', () => {
   });
 
   it('部署必须落在自己的出生区域内', () => {
-    const state = newGame();
+    const state = newGame('seed-a', null, 'manual');
     const own = state.characters.filter((item) => item.owner === 'P1');
     const result = validateAction(state, {
       type: 'DEPLOY',

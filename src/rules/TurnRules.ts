@@ -7,7 +7,14 @@
 import { INITIAL_HAND_SIZE, MAX_HAND_SIZE, drawCard } from '../cards/CardPool';
 import { createCharacter } from '../characters/Character';
 import type { GameEvent } from '../core/Event';
-import type { GameResult, GameState, PlayerId } from '../core/GameState';
+import type {
+  Deployment,
+  DeploymentAssignment,
+  GameResult,
+  GameState,
+  PlayerId,
+  VertexId,
+} from '../core/GameState';
 import { CHARACTER_TYPE_IDS, PLAYER_IDS, aliveCharactersOf, opponentOf } from '../core/GameState';
 import { shuffled } from '../core/RNG';
 
@@ -26,6 +33,43 @@ export function initialiseRoster(state: GameState, events: GameEvent[]): void {
     }
   }
   events.push({ type: 'GAME_START', firstPlayer: state.firstPlayer, roster: state.roster });
+}
+
+/**
+ * 核心随机部署：每名玩家在自己的出生区域内随机取 3 个不同节点。
+ *
+ * 使用 gameSeed 的 deploy 子流，因此同一组种子必然得到完全相同的站位。
+ */
+export function applyRandomDeployment(state: GameState, events: GameEvent[]): void {
+  for (const player of PLAYER_IDS) {
+    const region = state.spawn[player].region.slice().sort((a, b) => a - b);
+    if (region.length < TEAM_SIZE) {
+      throw new Error('出生区域只有 ' + region.length + ' 个节点，放不下 ' + TEAM_SIZE + ' 名角色');
+    }
+
+    const roll = shuffled(state.rng.deploy, region);
+    state.rng.deploy = roll.next;
+    const picks = roll.value.slice(0, TEAM_SIZE);
+    const own = state.characters.filter((character) => character.owner === player);
+
+    const assignments: DeploymentAssignment[] = [];
+    own.forEach((character, index) => {
+      const vertex = picks[index] as VertexId;
+      character.position = vertex;
+      assignments.push({ characterId: character.id, vertex });
+    });
+
+    state.deployment[player] = { assignments };
+    events.push({ type: 'DEPLOY_SUBMITTED', player });
+  }
+
+  events.push({
+    type: 'DEPLOY_REVEALED',
+    deployment: {
+      P1: state.deployment.P1 as Deployment,
+      P2: state.deployment.P2 as Deployment,
+    },
+  });
 }
 
 /** 开局发牌：双方各 3 张。 */

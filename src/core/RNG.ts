@@ -5,9 +5,14 @@
  * 过程式生成代码（地图生成）可以用 createRngCursor 包出可变游标。
  */
 
-export type RngStreamName = 'roster' | 'cards' | 'firstPlayer';
+export type RngStreamName = 'roster' | 'cards' | 'firstPlayer' | 'deploy';
 
-export const RNG_STREAM_NAMES: readonly RngStreamName[] = ['roster', 'cards', 'firstPlayer'];
+export const RNG_STREAM_NAMES: readonly RngStreamName[] = [
+  'roster',
+  'cards',
+  'firstPlayer',
+  'deploy',
+];
 
 /** 地图生成的子流：由 mapSeed 派生，与 gameSeed 完全独立。 */
 export type MapStreamName = 'points' | 'edges' | 'spawn';

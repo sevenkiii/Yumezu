@@ -12,8 +12,6 @@ import type { SkillDefinition } from '../Skill';
 
 const skill: SkillDefinition = {
   id: 'Freeze',
-  name: '冻结',
-  description: '以自身为中心、距离不超过 1 的所有敌方角色获得【冻结】。',
   cd: 2,
   listChoices(state: GameState, actor: CharacterState): SkillChoice[] {
     const targets = enemiesWithin(state, actor.owner, actor.position, FREEZE_RANGE).filter(
@@ -35,7 +33,6 @@ const skill: SkillDefinition = {
 
 export const urara: CharacterDefinition = {
   typeId: 'Urara',
-  name: 'Urara',
   hp: 10,
   attackDamage: 2,
   moveRange: 2,

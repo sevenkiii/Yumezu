@@ -10,6 +10,7 @@ import {
   edgeKey,
   neighbors,
   reachableWithin,
+  shortestPath,
 } from '../src/map/Graph';
 import { PHASE1_MAP, PHASE1_SPAWN_CENTERS } from '../src/map/fixtures';
 
@@ -71,5 +72,15 @@ describe('图工具', () => {
 
   it('reachableWithin 返回距离不超过上限的节点', () => {
     expect(reachableWithin(PHASE1_MAP, 0, 1).sort((a, b) => a - b)).toEqual([0, 1, 6]);
+  });
+
+  it('shortestPath 给出沿边逐跳的路径（用于移动动画）', () => {
+    const path = shortestPath(PHASE1_MAP, 0, 2);
+    expect(path).toEqual([0, 1, 2]);
+    expect(shortestPath(PHASE1_MAP, 5, 5)).toEqual([5]);
+
+    // 封锁边之后绕路，路径变长
+    const detour = shortestPath(PHASE1_MAP, 0, 1, { blockedEdges: new Set([edgeKey(0, 1)]) });
+    expect(detour).toEqual([0, 6, 7, 1]);
   });
 });

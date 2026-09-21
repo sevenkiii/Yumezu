@@ -143,6 +143,49 @@ export function reachableWithin(
   return out.sort((x, y) => x - y);
 }
 
+/**
+ * 两点之间的一条最短路径（含起点与终点）；不可达时返回 null。
+ * 界面用它把"移动"画成沿边逐跳的轨迹。
+ */
+export function shortestPath(
+  graph: Graph,
+  from: VertexId,
+  to: VertexId,
+  options: DistanceOptions = {},
+): VertexId[] | null {
+  if (from === to) return [from];
+  const adjacency = buildAdjacency(graph);
+  if (!adjacency.has(from) || !adjacency.has(to)) return null;
+
+  const previous = new Map<VertexId, VertexId>();
+  const seen = new Set<VertexId>([from]);
+  const queue: VertexId[] = [from];
+  let head = 0;
+
+  while (head < queue.length) {
+    const current = queue[head] as VertexId;
+    head += 1;
+    for (const entry of adjacency.get(current) ?? []) {
+      if (options.blockedEdges !== undefined && options.blockedEdges.has(entry.key)) continue;
+      if (options.impassable !== undefined && options.impassable.has(entry.to)) continue;
+      if (seen.has(entry.to)) continue;
+      seen.add(entry.to);
+      previous.set(entry.to, current);
+      if (entry.to === to) {
+        const path: VertexId[] = [to];
+        let node = to;
+        while (node !== from) {
+          node = previous.get(node) as VertexId;
+          path.unshift(node);
+        }
+        return path;
+      }
+      queue.push(entry.to);
+    }
+  }
+  return null;
+}
+
 export function connectedComponents(graph: Graph): VertexId[][] {
   const seen = new Set<VertexId>();
   const components: VertexId[][] = [];

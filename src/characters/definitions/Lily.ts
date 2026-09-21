@@ -12,8 +12,6 @@ import type { SkillDefinition } from '../Skill';
 
 const skill: SkillDefinition = {
   id: 'Swap',
-  name: '换位',
-  description: '选择距离不超过 3 的一名其他角色（友方或敌方），与其交换位置。',
   cd: 2,
   listChoices(state: GameState, actor: CharacterState): SkillChoice[] {
     return otherCharactersWithin(state, actor, SWAP_RANGE).map((target) => ({
@@ -29,7 +27,6 @@ const skill: SkillDefinition = {
 
 export const lily: CharacterDefinition = {
   typeId: 'Lily',
-  name: 'Lily',
   hp: 10,
   attackDamage: 2,
   moveRange: 2,

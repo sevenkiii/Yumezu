@@ -18,7 +18,9 @@ npm run format:check   # prettier --check（CI 使用）
 npm run typecheck      # tsc --noEmit
 npm run test           # vitest run
 npm run test:watch
+npm run dev            # 启动网页界面
 npm run demo           # 跑完一整局 3v3
+npm run build          # 类型检查 + 生产构建
 npm run simulate -- --games 200 --seed base   # Phase 5 统计工具
 ```
 
@@ -42,13 +44,21 @@ CI 依次执行 lint → format:check → typecheck → test。改动后请本�
 - UI 文案默认中文，但必须通过 i18n 接口，不要在组件里硬编码字符串。
 - 模块划分参照「每个角色一个文件、每张功能牌一个文件」的粒度。
 - 工具脚本放在 `tools/`，用 `node tools/run-ts.mjs <入口.ts>` 运行（借 Vite 转 TS，不要再引入 tsx / ts-node）。
+- **UI 只能通过 `src/ui/transport.ts` 读写对局**：组件不 import GameEngine，不读 GameState，
+  所有可点目标都从 `legalActions` 推导（见 `src/ui/interaction.ts`），确认时提交"查到的那个 Action"。
+- **UI 文案一律走 `src/ui/i18n`**，组件里不要出现玩家可见的字面量；引擎侧只保留 id。
+- 角色立绘放 `assets/characters/`，地图用的缩略图由 `node tools/make-thumbnails.mjs` 生成；
+  取景参数在 `src/ui/portraits.ts`（focusX / focusY / heightRatio），缺失素材要能回退成字母圆形。
 
 ## 当前状态
 
 **Phase 1 与 Phase 2 已完成**：核心引擎、6 名角色、11 张功能牌、随机地图生成与出生点选择均已实现，
 10 个测试文件 / 70 个测试通过，`npm run demo` 走"mapSeed → 生成地图 → 完整对局"的正式入口。
 
-Phase 5 的统计工具（`test/support/simulate.ts` + `npm run simulate`）已就绪，11 个测试文件 / 74 个测试通过。
+Phase 4.1 ~ 4.3 已完成：网页界面可以完整对局，角色/功能牌为卡牌样式，地图使用角色立绘。
+4.5 进一步改为"卡牌浮在桌面上"（牌面素材 `assets/ui/card.png`、扇形排列、详情滑入），
+并取消了人工选位（开局由核心随机部署，见 `RULES.md` §3）。
+Phase 5 的统计工具也已就绪。13 个测试文件 / 102 个测试通过。
 
-下一步是 Phase 4（React + SVG 网页 UI，设计仍在讨论中）；Phase 3 的角色 / 卡牌内容已在 Phase 1 一并实现。
-`src/ai`、`src/ui`、`src/server` 仍是空目录（只有 README）。
+下一步是 Phase 4.4（行动动画、结果预览、回合交接幕布）或 Phase 6（更强的 AI，用于平衡统计）。
+`src/ai` 与 `src/server` 仍是空目录（只有 README）。

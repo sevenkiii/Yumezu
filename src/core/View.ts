@@ -5,6 +5,8 @@
  * 提供这个接口是为了将来加入更多隐藏信息时不必改动引擎。
  */
 
+import type { Action } from './Action';
+import type { GameEvent } from './Event';
 import type {
   BlockedEdge,
   CharacterState,
@@ -40,6 +42,11 @@ export interface PlayerView {
   /** 对手的部署：只有双方都提交后才会出现。 */
   readonly opponentDeployment: Deployment | null;
   readonly opponentDeploymentSubmitted: boolean;
+  /** 最近若干回合的行动与公开事件（已过滤掉会泄露对手手牌的内容）。 */
+  readonly recentTurns: readonly {
+    readonly action: Action;
+    readonly events: readonly GameEvent[];
+  }[];
 }
 
 export function getViewFor(state: GameState, viewer: PlayerId): PlayerView {
@@ -62,5 +69,27 @@ export function getViewFor(state: GameState, viewer: PlayerId): PlayerView {
     ownDeployment: state.deployment[viewer],
     opponentDeployment: revealed ? state.deployment[opponent] : null,
     opponentDeploymentSubmitted: state.deployment[opponent] !== null,
+    recentTurns: recentTurnsFor(state, viewer),
   };
+}
+
+/**
+ * 行动记录的可见性：
+ *  - 抽牌与弃牌会暴露手牌内容，因此只有自己看得到；
+ *  - 打出的牌是公开信息（RULES.md §14 只隐藏手牌内容）。
+ */
+function recentTurnsFor(
+  state: GameState,
+  viewer: PlayerId,
+): { action: Action; events: GameEvent[] }[] {
+  const turns = state.history.slice(-12);
+  return turns.map((record) => ({
+    action: record.action,
+    events: record.events.filter((event) => {
+      if (event.type === 'CARD_DRAWN' || event.type === 'CARD_DISCARDED') {
+        return event.player === viewer;
+      }
+      return true;
+    }),
+  }));
 }

@@ -11,7 +11,6 @@ import { CHARACTER_DEFINITIONS } from './definitions';
 
 export interface CharacterDefinition {
   readonly typeId: CharacterTypeId;
-  readonly name: string;
   readonly hp: number;
   readonly attackDamage: number;
   readonly moveRange: number;

@@ -9,8 +9,6 @@ import type { CardDefinition } from '../Card';
 
 export const purify: CardDefinition = {
   id: 'Purify',
-  name: '净化',
-  description: '选择一名己方角色，移除其一个负面状态。',
   category: 'DEFENSE',
   listChoices(state: GameState, player: PlayerId): CardChoice[] {
     const choices: CardChoice[] = [];

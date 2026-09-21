@@ -17,8 +17,6 @@ import type { SkillDefinition } from '../Skill';
 
 const skill: SkillDefinition = {
   id: 'StarDash',
-  name: '星奔',
-  description: '移动至距离不超过 3 的节点，随后对距离 1 以内的所有敌方角色各造成 1 点伤害。',
   cd: 2,
   listChoices(state: GameState, actor: CharacterState): SkillChoice[] {
     if (actor.statuses.Frozen) return [];
@@ -45,7 +43,6 @@ const skill: SkillDefinition = {
 
 export const spica: CharacterDefinition = {
   typeId: 'Spica',
-  name: 'Spica',
   hp: 8,
   attackDamage: 2,
   moveRange: 3,
