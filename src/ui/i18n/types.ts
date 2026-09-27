@@ -47,6 +47,7 @@ export interface UiText {
     readonly confirm: string;
     readonly cancel: string;
     readonly back: string;
+    readonly undo: string;
   };
   readonly phase: Record<GamePhase, string>;
   readonly player: {

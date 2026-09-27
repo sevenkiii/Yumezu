@@ -25,6 +25,8 @@ export interface GameSnapshot {
   /** 最近一次行动产生的事件（界面用来播动画）；seq 单调递增。 */
   readonly lastEvents: readonly GameEvent[];
   readonly eventSeq: number;
+  /** 是否可以悔棋（本地对局限定）。 */
+  readonly canUndo: boolean;
 }
 
 export interface NewGameOptions {
@@ -40,6 +42,8 @@ export interface GameTransport {
   /** null 表示跟随当前行动方（同屏轮流用）。 */
   setViewer(viewer: PlayerId | null): void;
   startNewGame(options: NewGameOptions): void;
+  /** 回退一步（本地对局的便利功能，不是游戏规则）。 */
+  undo(): void;
 }
 
 export interface LocalTransportOptions extends NewGameOptions {
@@ -56,6 +60,9 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
   let viewer: PlayerId | null = options.viewer ?? null;
   let lastEvents: readonly GameEvent[] = [];
   let eventSeq = 0;
+  /** 悔棋用的状态栈（只保留最近若干步）。 */
+  const past: GameState[] = [];
+  const UNDO_LIMIT = 80;
   const listeners = new Set<() => void>();
   let snapshot = buildSnapshot();
 
@@ -69,6 +76,7 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
       viewer: effectiveViewer,
       lastEvents,
       eventSeq,
+      canUndo: past.length > 0,
     };
   }
 
@@ -88,6 +96,8 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
     dispatch(action: Action): void {
       try {
         const result = applyAction(state, action);
+        past.push(state);
+        if (past.length > UNDO_LIMIT) past.shift();
         state = result.state;
         lastEvents = result.events;
         eventSeq += 1;
@@ -102,7 +112,16 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
       viewer = next;
       publish();
     },
+    undo(): void {
+      const previous = past.pop();
+      if (previous === undefined) return;
+      state = previous;
+      lastEvents = [];
+      eventSeq += 1;
+      publish();
+    },
     startNewGame(next: NewGameOptions): void {
+      past.length = 0;
       state = createGameFromSeed({
         mapSeed: next.mapSeed,
         gameSeed: next.gameSeed,

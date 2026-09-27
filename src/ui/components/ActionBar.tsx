@@ -15,25 +15,15 @@ export interface ActionBarProps {
   readonly text: UiText;
   readonly ui: UiState;
   readonly highlights: UiHighlights;
-  readonly onCancel: () => void;
   readonly onDiscard: () => void;
-  readonly onConfirm: () => void;
   readonly onChooseStatus: (status: StatusType) => void;
 }
 
-export function ActionBar({
-  text,
-  ui,
-  highlights,
-  onCancel,
-  onDiscard,
-  onConfirm,
-  onChooseStatus,
-}: ActionBarProps) {
+export function ActionBar({ text, ui, highlights, onDiscard, onChooseStatus }: ActionBarProps) {
   const statuses = [...highlights.statuses];
   const isCard = ui.pending.kind === 'CARD';
-  const inProgress = ui.pending.kind !== 'IDLE';
-  const showActions = statuses.length > 0 || isCard || highlights.canConfirm;
+  // 交互减法后只剩两件"还需要再选一次"的事：弃牌、以及净化的状态选择
+  const showActions = statuses.length > 0 || isCard;
 
   return (
     <>
@@ -55,16 +45,6 @@ export function ActionBar({
           {isCard ? (
             <button type="button" className="ghost" onClick={onDiscard}>
               {text.action.discard}
-            </button>
-          ) : null}
-          {inProgress ? (
-            <button type="button" className="ghost" onClick={onCancel}>
-              {text.action.cancel}
-            </button>
-          ) : null}
-          {highlights.canConfirm ? (
-            <button type="button" className="primary" onClick={onConfirm}>
-              {text.action.confirm}
             </button>
           ) : null}
         </div>

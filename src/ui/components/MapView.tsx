@@ -34,6 +34,8 @@ export interface MapViewProps {
   readonly focusKey: string;
   /** 最近一次行动的事件（用于伤害飘字、移动轨迹等表现）。 */
   readonly fxEvents?: readonly GameEvent[];
+  /** 点击地图空白处（常用于取消选中）。 */
+  readonly onBackgroundClick?: () => void;
   readonly onCharacter: (id: CharacterId) => void;
   readonly onNode: (vertex: VertexId) => void;
   readonly onEdge: (edge: EdgeKey) => void;
@@ -46,6 +48,7 @@ export function MapView({
   text,
   focusKey,
   fxEvents = [],
+  onBackgroundClick,
   onCharacter,
   onNode,
   onEdge,
@@ -280,6 +283,7 @@ export function MapView({
           width={viewBoxRect.width}
           height={viewBoxRect.height}
           fill="url(#dream-paper)"
+          onClick={onBackgroundClick}
         />
 
         {fxEvents.length > 0 ? (

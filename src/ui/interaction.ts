@@ -452,6 +452,17 @@ export function confirmAction(highlights: UiHighlights): Action | null {
   return highlights.pendingAction;
 }
 
+/**
+ * 单击执行：把"这一下点击之后的状态"换算成要提交的行动。
+ *
+ * 返回 null 表示这一步只是选中 / 瞄准（参数还没齐，需要再点一次）；
+ * 返回 Action 表示参数已经齐了，界面应当立刻提交，不再需要确认按钮。
+ */
+export function actionAfterClick(next: UiState, legalActions: readonly Action[]): Action | null {
+  const highlights = computeHighlights(legalActions, next);
+  return highlights.canConfirm ? highlights.pendingAction : null;
+}
+
 /* ---------- 内部工具 ---------- */
 
 function skillChoicesFor(legalActions: readonly Action[], characterId: CharacterId): SkillChoice[] {

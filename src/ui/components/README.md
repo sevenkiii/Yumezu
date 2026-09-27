@@ -9,7 +9,7 @@
 | `MapView.tsx` | 一张 SVG：边 / 陷阱 / 出生区 / 节点 / 影标记 / 圆形头像角色 |
 | `TeamPanel.tsx` | 队伍条：己方用完整卡（`team-rail`），对手用迷你卡（`team-strip`） |
 | `HandView.tsx` | 手牌（默认全展开，含弃牌按钮） |
-| `ActionBar.tsx` | 地图顶部的提示胶囊 + **按需浮现**的确认 / 取消 / 弃牌 / 净化选项（没有固定底栏） |
+| `ActionBar.tsx` | 地图顶部的提示胶囊 + 仅剩的按需浮层（弃牌 / 净化选状态）；单击执行后已无确认按钮 |
 | `DetailPanel.tsx` | 选中卡牌后就地展开的介绍（名字、HP、技能全文、数值） |
 | `ActionLogPanel.tsx` | 行动记录（已过滤对手手牌内容） |
 | `NewGameScreen.tsx` | 开局界面（两个种子） |

@@ -144,9 +144,7 @@ describe('界面渲染冒烟测试', () => {
         text={text}
         ui={INITIAL_UI_STATE}
         highlights={highlightsOf(state)}
-        onCancel={noop}
         onDiscard={noop}
-        onConfirm={noop}
         onChooseStatus={noop}
       />,
     );
@@ -162,9 +160,7 @@ describe('界面渲染冒烟测试', () => {
         text={text}
         ui={ui}
         highlights={highlightsOf(state, ui)}
-        onCancel={noop}
         onDiscard={noop}
-        onConfirm={noop}
         onChooseStatus={noop}
       />,
     );
@@ -172,7 +168,7 @@ describe('界面渲染冒烟测试', () => {
     expect(html).not.toContain('map-actions');
   });
 
-  it('瞄准到目标后浮现确认与取消', () => {
+  it('单击执行后不再有确认按钮（浮动层只剩弃牌与状态选择）', () => {
     const state = battle();
     const armed = armSkill(clickCharacter(INITIAL_UI_STATE, highlightsOf(state), 'P1:Nana'));
     const aimed = clickCharacter(armed, highlightsOf(state, armed), 'P2:Mikage');
@@ -181,15 +177,12 @@ describe('界面渲染冒烟测试', () => {
         text={text}
         ui={aimed}
         highlights={highlightsOf(state, aimed)}
-        onCancel={noop}
         onDiscard={noop}
-        onConfirm={noop}
         onChooseStatus={noop}
       />,
     );
-    expect(html).toContain('map-actions');
-    expect(html).toContain(text.action.cancel);
-    expect(html).toContain(text.action.confirm);
+    expect(html).not.toContain('map-actions');
+    expect(html).not.toContain(text.action.confirm);
   });
 
   it('选中手牌后浮现弃牌', () => {
@@ -200,9 +193,7 @@ describe('界面渲染冒烟测试', () => {
         text={text}
         ui={ui}
         highlights={highlightsOf(state, ui)}
-        onCancel={noop}
         onDiscard={noop}
-        onConfirm={noop}
         onChooseStatus={noop}
       />,
     );

@@ -16,6 +16,7 @@ import {
   isArmedEdge,
   isArmedNode,
   isArmedStatus,
+  actionAfterClick,
   placeDeployCharacter,
   selectCard,
   selectDeployCharacter,
@@ -302,5 +303,64 @@ describe('UI 交互层：选中 → 高亮 → 点两次执行', () => {
     expect(view.canUseSkill).toBe(false);
     expect(view.selectableCharacters.size).toBe(0);
     expect(view.pendingAction).toBeNull();
+  });
+
+  it('单击执行：点一次可达节点就直接产出 MOVE', () => {
+    const state = battle({});
+    const ui = select(state, 'P1:Nana');
+    const { highlights } = step(state, ui);
+    const destination = [...highlights.moveNodes].find((vertex) => vertex !== 0) as number;
+
+    const afterClick = clickNode(ui, highlights, destination);
+    const action = actionAfterClick(afterClick, getLegalActions(state));
+
+    expect(action).toMatchObject({ type: 'MOVE', characterId: 'P1:Nana', to: destination });
+    expect(validateAction(state, action as Action).ok).toBe(true);
+  });
+
+  it('单击执行：点一次敌人就直接产出 ATTACK', () => {
+    const state = battle({});
+    const ui = select(state, 'P1:Nana');
+    const { highlights } = step(state, ui);
+
+    const afterClick = clickCharacter(ui, highlights, 'P2:Nana');
+    const action = actionAfterClick(afterClick, getLegalActions(state));
+
+    expect(action).toMatchObject({ type: 'ATTACK', characterId: 'P1:Nana', targetId: 'P2:Nana' });
+  });
+
+  it('单击执行：无目标的技能点一次圆钮就施放', () => {
+    const state = battle(
+      {},
+      {
+        'P1:Nana': 0,
+        'P1:Lily': 13,
+        'P1:Melty': 7,
+        'P2:Nana': 8,
+        'P2:Lily': 23,
+        'P2:Melty': 28,
+      },
+    );
+    const ui = select(state, 'P1:Melty');
+    const afterClick = armSkill(ui);
+    const action = actionAfterClick(afterClick, getLegalActions(state));
+    expect(action).toMatchObject({ type: 'USE_SKILL', characterId: 'P1:Melty' });
+  });
+
+  it('单击执行：净化这类还需要选参数的牌不会被提前提交', () => {
+    const state = battle({ P1: ['Purify'] });
+    const nana = findCharacter(state, 'P1:Nana');
+    if (nana === null) throw new Error('missing');
+    nana.statuses.Frozen = true;
+    nana.statuses.Marked = true;
+
+    const ui = selectCard(INITIAL_UI_STATE, state.players.P1.hand[0]!.id, 'Purify');
+    const afterTarget = clickCharacter(ui, step(state, ui).highlights, 'P1:Nana');
+    expect(actionAfterClick(afterTarget, getLegalActions(state))).toBeNull();
+
+    const afterStatus = clickStatus(afterTarget, step(state, afterTarget).highlights, 'Frozen');
+    expect(actionAfterClick(afterStatus, getLegalActions(state))).toMatchObject({
+      type: 'USE_CARD',
+    });
   });
 });

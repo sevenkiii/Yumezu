@@ -36,10 +36,6 @@ import {
   clickStatus,
   computeHighlights,
   confirmAction,
-  isArmedCharacter,
-  isArmedEdge,
-  isArmedNode,
-  isArmedStatus,
   selectCard,
   selectDiscard,
   selectPass,
@@ -99,12 +95,37 @@ export function App() {
     setBannerKey((key) => key + 1);
   }, [started, view.turnIndex, view.currentPlayer]);
 
+  // 取消选中：按 Esc，或点击地图空白处
+  useEffect(() => {
+    if (!started) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setUi(INITIAL_UI_STATE);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [started]);
+
   const update = (fn: (current: UiState, current_: UiHighlights) => UiState): void => {
     setUi((previous) => fn(previous, computeHighlights(legal, previous)));
   };
 
   const execute = (action: Action | null): void => {
     if (action !== null) transport.dispatch(action);
+  };
+
+  /**
+   * 交互减法（4.8）：一次点击就把行动做完。
+   * 先算出这一下点击后的界面状态，如果参数已经齐了就直接提交，否则只是"选中/瞄准"。
+   */
+  const act = (fn: (current: UiState, current_: UiHighlights) => UiState): void => {
+    const next = fn(ui, highlights);
+    const nextHighlights = computeHighlights(legal, next);
+    if (nextHighlights.canConfirm && nextHighlights.pendingAction !== null) {
+      transport.dispatch(nextHighlights.pendingAction);
+      setUi(INITIAL_UI_STATE);
+      return;
+    }
+    setUi(next);
   };
 
   // ?select=0：自动选中第 N 名己方角色（截图 / 调试用）
@@ -126,63 +147,32 @@ export function App() {
   /* ---------- 点击：第一次瞄准，第二次执行 ---------- */
 
   const onCharacterClick = (id: CharacterId): void => {
-    if (isArmedCharacter(ui, id) && highlights.pendingAction !== null) {
-      execute(highlights.pendingAction);
-      return;
-    }
-    update((current, h) => clickCharacter(current, h, id));
+    act((current, h) => clickCharacter(current, h, id));
   };
 
   const onNodeClick = (vertex: VertexId): void => {
-    if (isArmedNode(ui, vertex) && highlights.pendingAction !== null) {
-      execute(highlights.pendingAction);
-      return;
-    }
-    update((current, h) => clickNode(current, h, vertex));
+    act((current, h) => clickNode(current, h, vertex));
   };
 
   const onEdgeClick = (edge: EdgeKey): void => {
-    if (isArmedEdge(ui, edge) && highlights.pendingAction !== null) {
-      execute(highlights.pendingAction);
-      return;
-    }
-    update((current, h) => clickEdge(current, h, edge));
+    act((current, h) => clickEdge(current, h, edge));
   };
 
   const onStatusClick = (status: StatusType): void => {
-    if (isArmedStatus(ui, status) && highlights.pendingAction !== null) {
-      execute(highlights.pendingAction);
-      return;
-    }
-    update((current, h) => clickStatus(current, h, status));
+    act((current, h) => clickStatus(current, h, status));
   };
 
+  /** 技能圆钮：一次点击就做完（无目标的技能直接施放，有目标的进入瞄准）。 */
   const onSkillClick = (): void => {
-    if (ui.pending.kind === 'SKILL' && highlights.pendingAction !== null) {
-      execute(highlights.pendingAction);
-      return;
-    }
-    update((current) => armSkill(current));
+    act((current) => armSkill(current));
   };
 
   const onPassClick = (): void => {
-    if (ui.pending.kind === 'PASS' && highlights.pendingAction !== null) {
-      execute(highlights.pendingAction);
-      return;
-    }
-    update((current) => selectPass(current));
+    act((current) => selectPass(current));
   };
 
   const onDiscardClick = (handCardId: string): void => {
-    if (
-      ui.pending.kind === 'DISCARD' &&
-      ui.pending.handCardId === handCardId &&
-      highlights.pendingAction !== null
-    ) {
-      execute(highlights.pendingAction);
-      return;
-    }
-    update((current) => selectDiscard(current, handCardId));
+    act((current) => selectDiscard(current, handCardId));
   };
 
   if (!started) {
@@ -238,6 +228,14 @@ export function App() {
           />
         </div>
         <div className="top-bar__buttons">
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => transport.undo()}
+            disabled={!snapshot.canUndo}
+          >
+            {text.action.undo}
+          </button>
           <button type="button" className="ghost" onClick={onPassClick} disabled={!yourTurn}>
             {text.action.pass}
           </button>
@@ -266,6 +264,7 @@ export function App() {
             onCharacter={onCharacterClick}
             onNode={onNodeClick}
             onEdge={onEdgeClick}
+            onBackgroundClick={() => setUi(INITIAL_UI_STATE)}
           />
 
           {!snapshot.finished ? (
@@ -339,13 +338,11 @@ export function App() {
               text={text}
               ui={ui}
               highlights={highlights}
-              onCancel={() => setUi(INITIAL_UI_STATE)}
               onDiscard={() => {
                 if (ui.pending.kind !== 'CARD') return;
                 const handCardId = ui.pending.handCardId;
                 execute(confirmAction(computeHighlights(legal, selectDiscard(ui, handCardId))));
               }}
-              onConfirm={() => execute(confirmAction(highlights))}
               onChooseStatus={onStatusClick}
             />
           ) : null}

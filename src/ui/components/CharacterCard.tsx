@@ -69,6 +69,7 @@ export function CharacterCard({
   return (
     <div
       className={className}
+      title={hint}
       style={
         {
           '--tilt': tilt + 'deg',
@@ -76,7 +77,6 @@ export function CharacterCard({
           '--owner': ownerColor,
         } as React.CSSProperties
       }
-      title={hint}
     >
       <button
         type="button"
