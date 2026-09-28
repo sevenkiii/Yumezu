@@ -72,6 +72,8 @@ export function App() {
   const [fxEvents, setFxEvents] = useState<readonly GameEvent[]>([]);
   /** ?select= 只生效一次，避免"清空选中后又被自动选回来"。 */
   const selectApplied = useRef(false);
+  /** 上一次渲染用的状态哈希：只有真正"行动过后"才清空 UI 选中态。 */
+  const lastHashRef = useRef(snapshot.stateHash);
 
   const legal = snapshot.legalActions;
   const highlights = useMemo(() => computeHighlights(legal, ui), [legal, ui]);
@@ -79,7 +81,12 @@ export function App() {
   const selectedCharacterId = ui.selectedCharacterId;
   const yourTurn = view.currentPlayer === view.viewer && !snapshot.finished;
 
+  // 状态变了（有人真的行动过）才清空 UI 选中态。
+  // 注意：不能在挂载时无条件执行 —— StrictMode 会把 effect 跑两遍，
+  // 第二遍的 setUi 会覆盖掉 ?select= 刚刚设好的选中态。
   useEffect(() => {
+    if (lastHashRef.current === snapshot.stateHash) return;
+    lastHashRef.current = snapshot.stateHash;
     setUi(INITIAL_UI_STATE);
   }, [snapshot.stateHash]);
 

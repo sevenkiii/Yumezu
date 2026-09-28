@@ -78,6 +78,28 @@ button.ghost {
   background: rgba(255, 255, 255, 0.04);
 }
 
+/*
+ * 卡面按钮：牌的"脸"是 assets/ui/card.png，不是按钮底色。
+ *
+ * 上面那条 button:hover:not(:disabled) 的特异性是 (0,2,1)，比
+ * .char-card__body / .hand-card__main 的 (0,1,0) 高，所以不显式压住的话，
+ * 鼠标一移到牌上就会把整张牌刷成白板（手机上点完 :hover 会一直粘着，
+ * 看起来就像"选中卡牌变白"）。这里用 (0,3,0) 的规则把卡面钉回透明。
+ */
+.char-card__body,
+.char-card__body:hover:not(:disabled),
+.char-card__body:focus-visible,
+.hand-card__main,
+.hand-card__main:hover:not(:disabled),
+.hand-card__main:focus-visible {
+  background: transparent;
+}
+
+/* 功能牌上的"弃置"小钮同理：hover 换成暖色，别刷白 */
+.hand-card__discard:hover:not(:disabled) {
+  background: rgba(231, 200, 135, 0.22);
+}
+
 /* ---------- 骨架：地图优先 ---------- */
 .app {
   display: flex;
@@ -271,9 +293,9 @@ button.ghost {
 .char-card--full {
   width: calc(var(--card-art) + 20px);
 }
-.char-card--selected {
-  background: rgba(255, 255, 255, 0.14);
-}
+/* 选中态只靠外圈描边与位置变化表达。
+   这里曾经有一条 `.char-card--selected { background: ... }`，是"选中卡牌变白"的
+   两个来源之一（另一个是全局 button:hover，见上方「卡面按钮」那段）。 */
 .char-card--selectable {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14) inset;
 }
@@ -564,6 +586,319 @@ button.ghost {
   stroke: #ff7a7a;
   stroke-width: 5;
   animation: fx-death 900ms ease-out forwards;
+}
+
+/* ============================================================
+ * 5.0 浅蓝主题（样板）
+ *
+ * 思路：底图用 assets/ui/hrmk/Galaxy_log.jpg，上面盖一层高不透明度的雾蓝
+ * （地图区域盖得浅一点，让星云透出来）。所有面板、按钮、文字统一切换到浅色。
+ * ============================================================ */
+
+:root {
+  --bg-deep: #e8f0f8;
+  --panel: rgba(252, 254, 255, 0.88);
+  --panel-strong: #fbfdff;
+  --border: #c3d3e4;
+  --text: #22304a;
+  --muted: #6b7c95;
+  --p1: #e2684c;
+  --p2: #2e6fb5;
+  --accent: #2e6fb5;
+  --warn: #cf7a1f;
+  --danger: #c8503f;
+  --shadow-soft: 0 10px 24px rgba(34, 48, 74, 0.14);
+}
+
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+}
+
+/* 页面背景：星云图 + 雾蓝遮罩（用图片自身的不透明度表示） */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url('../../assets/ui/hrmk/Galaxy_log.jpg') center / cover no-repeat;
+  /* 页面这一层压得浅：星云当作底纹能看见 */
+  opacity: 0.26;
+}
+
+button {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+button:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+button.primary {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+button.ghost {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.top-bar {
+  box-shadow: var(--shadow-soft);
+}
+
+.chip--ready {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.app__board {
+  /* 地图是"铺在桌上的一张纸"：浅底 + 细边 + 柔和投影，和页面背景区分开 */
+  background: rgba(252, 254, 255, 0.55);
+  border-color: #b9cbe0;
+  box-shadow: var(--shadow-soft);
+}
+
+/* 地图内部：为浅色底重做配色（节点与边） */
+.edge {
+  stroke: rgba(37, 92, 153, 0.6);
+  stroke-width: 5;
+}
+
+.edge--selectable {
+  stroke: #1f9d7a;
+}
+
+.node {
+  /* 深色节点 + 白色细环：在浅蓝纸面上最清楚 */
+  fill: #2f4d74;
+  stroke: #ffffff;
+  stroke-width: 2.5;
+}
+
+.node--move {
+  fill: #1f9d7a;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.node--pick {
+  fill: #d98324;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.node--deploy {
+  fill: #2e6fb5;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.spawn-zone {
+  fill: rgba(46, 111, 181, 0.07);
+}
+
+.token__hp {
+  fill: rgba(34, 48, 74, 0.45);
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+/* 立绘外面再套一圈白环，浅底上才分得开 */
+.token__body {
+  stroke: #ffffff;
+  stroke-width: 4;
+}
+
+.token__hp-text {
+  fill: var(--text);
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 5;
+}
+
+.token__ring {
+  stroke: var(--text);
+  stroke-width: 5;
+}
+
+.token__ring--target,
+.token__ring--targetable {
+  stroke: var(--warn);
+  stroke-width: 6;
+}
+
+.token__glow {
+  stroke: rgba(34, 48, 74, 0.22);
+}
+
+.token__status {
+  stroke: rgba(255, 255, 255, 0.9);
+}
+
+.map-hint {
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.map-actions {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.map-zoom button {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+}
+
+.map--focused {
+  filter: drop-shadow(0 16px 24px rgba(34, 48, 74, 0.25));
+}
+
+.turn-banner {
+  color: var(--text);
+  text-shadow: 0 2px 14px rgba(255, 255, 255, 0.95);
+}
+
+.fx-float {
+  fill: var(--danger);
+  stroke: rgba(255, 255, 255, 0.92);
+}
+
+.fx-float--heal {
+  fill: #1f9d7a;
+}
+
+.fx-path {
+  stroke: #1f9d7a;
+}
+
+.fx-dot {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 6px rgba(31, 157, 122, 0.9));
+}
+
+.fx-death {
+  stroke: var(--danger);
+}
+
+.result-banner {
+  background: rgba(31, 157, 122, 0.14);
+  border-color: rgba(31, 157, 122, 0.4);
+}
+
+/* 开局界面：这张图几乎不遮罩，让它当主视觉 */
+.app--start::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgba(232, 240, 248, 0.16), rgba(232, 240, 248, 0.52)),
+    url('../../assets/ui/hrmk/Galaxy_log.jpg') center / cover no-repeat;
+}
+
+.new-game {
+  background: rgba(252, 254, 255, 0.9);
+  border-color: var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.new-game__title {
+  color: var(--text);
+  text-shadow: 0 2px 18px rgba(255, 255, 255, 0.9);
+}
+
+/* 还有一些当初为深色写死的颜色，逐个改成浅色 */
+.card-detail .detail {
+  background: rgba(252, 254, 255, 0.96);
+  border-color: var(--border);
+}
+
+.log-line {
+  color: var(--text);
+}
+
+.log-line--sub {
+  color: var(--muted);
+}
+
+.detail__body {
+  color: #4a5a72;
+}
+
+.detail__art {
+  background: rgba(34, 48, 74, 0.06);
+}
+
+.new-game__field input {
+  background: #ffffff;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.char-card--mini {
+  background: rgba(252, 254, 255, 0.92);
+}
+
+.char-card--mini .char-card__hpbar {
+  background: rgba(34, 48, 74, 0.16);
+}
+
+/* 桌面端顶栏保持一行（手机上仍然换行，那条规则在上面） */
+@media (min-width: 901px) {
+  .top-bar {
+    flex-wrap: nowrap;
+  }
+}
+
+/* 深色牌面落在浅色纸面上，给一层柔和的投影才像"摆着" */
+.char-card--full,
+.hand-card {
+  box-shadow: 0 14px 26px rgba(34, 48, 74, 0.24);
+}
+
+.char-card--selected {
+  box-shadow:
+    0 0 0 2px var(--owner, #fff),
+    0 16px 30px rgba(34, 48, 74, 0.3);
+}
+
+/* ============================================================
+ * 浅色主题的最终覆盖：放在文件最后，确保不被前面遗留的深色规则盖掉
+ * （styles.css 目前还混着深色主题的旧规则，等地毯式铺开时会整体重写）
+ * ============================================================ */
+.node {
+  fill: #2f4d74;
+  stroke: #ffffff;
+  stroke-width: 2.5;
+}
+
+.node--move {
+  fill: #1f9d7a;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.node--pick {
+  fill: #d98324;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.node--deploy {
+  fill: #2e6fb5;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.edge {
+  stroke: rgba(37, 92, 153, 0.6);
+  stroke-width: 5;
 }
 
 @keyframes fx-death {

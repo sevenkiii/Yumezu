@@ -271,9 +271,10 @@ export function MapView({
       >
         <defs>
           <radialGradient id="dream-paper" cx="50%" cy="42%" r="72%">
-            <stop offset="0%" stopColor="#26304d" />
-            <stop offset="60%" stopColor="#1b2238" />
-            <stop offset="100%" stopColor="#141a2b" />
+            {/* 浅蓝主题：地图区域用半透明的雾蓝罩住，让底下的星云图隐约透出来（数值 = "更实"的程度） */}
+            <stop offset="0%" stopColor="#dfeaf7" stopOpacity="0.92" />
+            <stop offset="60%" stopColor="#d7e4f3" stopOpacity="0.93" />
+            <stop offset="100%" stopColor="#cbdcee" stopOpacity="0.94" />
           </radialGradient>
         </defs>
         {/* 底板铺满整个可见区域，避免出现"地图方块"边界 */}
@@ -472,6 +473,15 @@ export function MapView({
                 >
                   {character.hp}
                 </text>
+                <circle
+                  className="token__outer"
+                  cx={point.x}
+                  cy={point.y}
+                  r={BOARD_SIZES.tokenRadius + 4}
+                  fill="none"
+                  stroke={PLAYER_COLORS[character.owner]}
+                  strokeWidth={4}
+                />
                 <circle
                   className="token__body"
                   cx={point.x}

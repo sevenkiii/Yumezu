@@ -28,3 +28,6 @@ Thumbs.db
 
 # assets
 /assets/characters/
+/assets/ui/hrmk/
+
+/refs/
