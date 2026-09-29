@@ -120,6 +120,12 @@
     transform-origin: center;
   }
 
+  /* 内层的"撞击"层：走位在外层，撞击叠加在这里 */
+  .token__lunge {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
   /* 立绘外面套一圈白环（阵营色由 .token__outer 的行内 stroke 提供） */
   .token__body {
     stroke: #ffffff;
@@ -307,6 +313,8 @@
   /* 伤害 / 治疗飘字 */
   .fx-float {
     fill: var(--danger);
+    /* 基础就透明：延迟出现的那一段不能先露出来 */
+    opacity: 0;
     font-size: 30px;
     font-weight: 700;
     text-anchor: middle;
@@ -358,9 +366,35 @@
   /* 阵亡涟漪 */
   .fx-death {
     fill: none;
+    opacity: 0;
     stroke: var(--danger);
     stroke-width: 5;
+    /* 以自身中心缩放，涟漪才是围着这个节点炸开的 */
+    transform-box: fill-box;
+    transform-origin: center;
     animation: fx-death 900ms ease-out forwards;
+  }
+
+  /* 命中环：撞上去的瞬间在目标身上炸开一圈 */
+  .fx-hit {
+    fill: none;
+    opacity: 0;
+    stroke: rgba(200, 80, 63, 0.75);
+    stroke-width: 4;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: fx-hit 340ms ease-out forwards;
+  }
+
+  @keyframes fx-hit {
+    from {
+      opacity: 0.95;
+      transform: scale(0.5);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.6);
+    }
   }
 
   @keyframes fx-death {

@@ -12,6 +12,7 @@ import { edgeKey, edgeKeyOf, shortestPath } from '../src/map/Graph';
 import { PHASE1_MAP } from '../src/map/fixtures';
 import { canMoveTo } from '../src/rules/MovementRules';
 import {
+  buildTokenLunges,
   buildTokenTrails,
   createMovePathOf,
   type TrailPoint,
@@ -21,6 +22,7 @@ import { createBattleState } from './support/fixtures';
 
 const ALICE = 'P1:Mikage' as CharacterId;
 const BOB = 'P2:Lily' as CharacterId;
+const CAROL = 'P2:Urara' as CharacterId;
 
 /** 坐标表故意用整数，方便直接断言。 */
 const positions = new Map<VertexId, TrailPoint>(
@@ -36,6 +38,24 @@ function context(positionOfCharacter: ReadonlyMap<CharacterId, VertexId>): Token
 
 function moved(characterId: CharacterId, from: VertexId, to: VertexId): GameEvent {
   return { type: 'MOVED', characterId, from, to, cause: 'MOVE' };
+}
+
+function damaged(
+  source: CharacterId,
+  target: CharacterId,
+  kind: 'ATTACK' | 'TRAP' = 'ATTACK',
+): GameEvent {
+  return {
+    type: 'DAMAGED',
+    targetId: target,
+    amount: 2,
+    hpAfter: 8,
+    source: {
+      kind,
+      sourceCharacterId: kind === 'TRAP' ? null : source,
+      sourcePlayerId: 'P1',
+    },
+  };
 }
 
 /** 在夹具地图上找一对至少两跳的节点。 */
@@ -111,15 +131,48 @@ describe('buildTokenTrails', () => {
   it('与位移无关的事件不产生轨迹', () => {
     const events: GameEvent[] = [
       { type: 'CHARACTER_DIED', characterId: ALICE },
-      {
-        type: 'DAMAGED',
-        targetId: BOB,
-        amount: 2,
-        hpAfter: 8,
-        source: { kind: 'ATTACK', sourceCharacterId: ALICE, sourcePlayerId: 'P1' },
-      },
+      damaged(ALICE, BOB),
     ];
     expect(buildTokenTrails(events, context(new Map()))).toEqual([]);
+  });
+});
+
+describe('buildTokenLunges：只有单体伤害才撞过去', () => {
+  const positionOfCharacter = new Map<CharacterId, VertexId>([
+    [ALICE, 0],
+    [BOB, 24],
+    [CAROL, 29],
+  ]);
+  const lungeContext = { positions, positionOfCharacter };
+
+  it('单体伤害撞一次，方向是"出手方 → 目标"', () => {
+    const lunges = buildTokenLunges([damaged(ALICE, BOB)], lungeContext);
+    expect(lunges).toHaveLength(1);
+    expect(lunges[0]?.characterId).toBe(ALICE);
+    expect(lunges[0]?.targetId).toBe(BOB);
+    expect(lunges[0]?.from).toEqual(positions.get(0));
+    expect(lunges[0]?.to).toEqual(positions.get(24));
+  });
+
+  it('AOE（同一出手方打了两个目标）不撞', () => {
+    const events = [damaged(ALICE, BOB), damaged(ALICE, CAROL)];
+    expect(buildTokenLunges(events, lungeContext)).toEqual([]);
+  });
+
+  it('同一目标挨了两下（单体多段）只撞一次', () => {
+    const events = [damaged(ALICE, BOB), damaged(ALICE, BOB)];
+    const lunges = buildTokenLunges(events, lungeContext);
+    expect(lunges).toHaveLength(1);
+    expect(lunges[0]?.targetId).toBe(BOB);
+  });
+
+  it('没有出手角色的伤害（陷阱）不撞', () => {
+    expect(buildTokenLunges([damaged(ALICE, BOB, 'TRAP')], lungeContext)).toEqual([]);
+  });
+
+  it('出手方或目标的位置拿不到时不撞', () => {
+    const empty = { positions, positionOfCharacter: new Map<CharacterId, VertexId>() };
+    expect(buildTokenLunges([damaged(ALICE, BOB)], empty)).toEqual([]);
   });
 });
 

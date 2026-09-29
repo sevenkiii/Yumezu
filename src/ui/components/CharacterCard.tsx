@@ -2,6 +2,9 @@
  * 角色卡：以 assets/ui/card.png 为牌面，叠加立绘、名字、HP 与技能圆钮。
  *
  * 只用在底部扇形里（可选中、可用技能、可倾斜）；对手那一行用的是 HpAvatar。
+ *
+ * 注意技能圆钮是卡片的**兄弟节点**（不是子节点）：它浮在卡牌正上方，
+ * 而 `.char-card` 有 `overflow: hidden`，放里面会被裁掉。选中时才渲染。
  */
 
 import { characterDefinition } from '../../characters/Character';
@@ -64,79 +67,84 @@ export function CharacterCard({
     characterText.role + ' · ' + characterText.skillName + '：' + characterText.skillDescription;
 
   return (
-    <div
-      className={className}
-      title={hint}
-      style={
-        {
-          '--tilt': tilt + 'deg',
-          '--lift': lift + 'px',
-          '--owner': ownerColor,
-        } as React.CSSProperties
-      }
-    >
-      <button
-        type="button"
-        className="char-card__body"
-        onClick={onSelect}
-        disabled={onSelect === undefined || !selectable}
+    <>
+      <div
+        className={className}
+        title={hint}
+        style={
+          {
+            '--tilt': tilt + 'deg',
+            '--lift': lift + 'px',
+            '--owner': ownerColor,
+          } as React.CSSProperties
+        }
       >
-        <span className="char-card__art">
-          {hasPortrait ? (
-            <Portrait
-              typeId={character.typeId}
-              boxAspect={1}
-              framing="card"
-              className="char-card__art-img"
-            />
-          ) : (
-            <span className="char-card__initial">{characterText.name.slice(0, 1)}</span>
-          )}
-          <span className="char-card__hpbar">
-            <i style={{ width: (ratio * 100).toFixed(1) + '%', background: ownerColor }} />
+        <button
+          type="button"
+          className="char-card__body"
+          onClick={onSelect}
+          disabled={onSelect === undefined || !selectable}
+        >
+          <span className="char-card__art">
+            {hasPortrait ? (
+              <Portrait
+                typeId={character.typeId}
+                boxAspect={1}
+                framing="card"
+                className="char-card__art-img"
+              />
+            ) : (
+              <span className="char-card__initial">{characterText.name.slice(0, 1)}</span>
+            )}
+            <span className="char-card__hpbar">
+              <i style={{ width: (ratio * 100).toFixed(1) + '%', background: ownerColor }} />
+            </span>
           </span>
-        </span>
-        <span className="char-card__meta">
-          <span className="char-card__name">{characterText.name}</span>
-          <span className="char-card__hp-text">
-            {text.format.hp(character.hp, character.maxHp)}
+          <span className="char-card__meta">
+            <span className="char-card__name">{characterText.name}</span>
+            <span className="char-card__hp-text">
+              {text.format.hp(character.hp, character.maxHp)}
+            </span>
           </span>
-        </span>
-        {statuses.length > 0 ? (
-          <span className="char-card__statuses">
-            {statuses.map((status) => (
-              <span
-                key={status}
-                className="char-card__status"
-                style={{ borderColor: STATUS_COLORS[status], color: STATUS_COLORS[status] }}
-                title={text.status[status].name + '：' + text.status[status].description}
-              >
-                {text.status[status].short}
-              </span>
-            ))}
-          </span>
-        ) : null}
-      </button>
+          {statuses.length > 0 ? (
+            <span className="char-card__statuses">
+              {statuses.map((status) => (
+                <span
+                  key={status}
+                  className="char-card__status"
+                  style={{ borderColor: STATUS_COLORS[status], color: STATUS_COLORS[status] }}
+                  title={text.status[status].name + '：' + text.status[status].description}
+                >
+                  {text.status[status].short}
+                </span>
+              ))}
+            </span>
+          ) : null}
+        </button>
+      </div>
 
-      <button
-        type="button"
-        className="char-card__skill"
-        onClick={onSkill}
-        disabled={onSkill === undefined || !canUseSkill}
-        style={{
-          background:
-            'conic-gradient(' +
-            (character.skillCd <= 0 ? '#e7c887' : '#7fd1ff') +
-            ' ' +
-            (cdProgress * 100).toFixed(0) +
-            '%, rgba(0,0,0,0.35) 0)',
-        }}
-        title={characterText.skillName + '：' + characterText.skillDescription}
-      >
-        <span className="char-card__skill-inner">
-          <span className="char-card__skill-name">{characterText.skillName}</span>
-        </span>
-      </button>
-    </div>
+      {/* 选中后才浮出来：外圈是 CD 环，里面先放技能名，以后换成图标即可 */}
+      {selected ? (
+        <button
+          type="button"
+          className="char-card__skill"
+          onClick={onSkill}
+          disabled={onSkill === undefined || !canUseSkill}
+          style={{
+            background:
+              'conic-gradient(' +
+              (character.skillCd <= 0 ? '#e7c887' : '#7fd1ff') +
+              ' ' +
+              (cdProgress * 100).toFixed(0) +
+              '%, rgba(0,0,0,0.35) 0)',
+          }}
+          title={characterText.skillName + '：' + characterText.skillDescription}
+        >
+          <span className="char-card__skill-inner">
+            <span className="char-card__skill-name">{characterText.skillName}</span>
+          </span>
+        </button>
+      ) : null}
+    </>
   );
 }

@@ -143,6 +143,8 @@
   .top-bar__buttons button {
     min-height: 34px;
     padding: 5px 10px;
+    /* 顶栏按钮方一点更利落，别跟圆角胶囊一样圆 */
+    border-radius: 6px;
     font-size: 12px;
   }
 

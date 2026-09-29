@@ -7,7 +7,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GameEvent } from '../../core/Event';
 import { EffectsLayer } from './EffectsLayer';
-import { buildTokenTrails, createMovePathOf, type TokenTrail } from '../tokenTrail';
+import {
+  buildTokenLunges,
+  buildTokenTrails,
+  createMovePathOf,
+  type TokenLunge,
+  type TokenTrail,
+} from '../tokenTrail';
+import { trailDurationsOf } from '../motionTiming';
 import { useTokenMotion } from '../useTokenMotion';
 
 import type { CharacterId, CharacterTypeId, EdgeKey, VertexId } from '../../core/GameState';
@@ -28,6 +35,7 @@ import type { UiText } from '../i18n';
 
 /** 没有位移时的空轨迹：用常量，免得 memo 每次都给新数组。 */
 const NO_TRAILS: readonly TokenTrail[] = [];
+const NO_LUNGES: readonly TokenLunge[] = [];
 
 export interface MapViewProps {
   readonly view: PlayerView;
@@ -78,6 +86,12 @@ export function MapView({
     [view.graph, blocked, view.characters],
   );
 
+  /** 角色 id → 当前所在节点（位移轨迹与撞击都要用）。 */
+  const positionOfCharacter = useMemo(
+    () => new Map(view.characters.map((item) => [item.id, item.position])),
+    [view.characters],
+  );
+
   /**
    * 这一批事件里谁要挪窝、该沿哪条线走。
    * token 的静态坐标已经是终点，动画只负责把它从起点"走"过去。
@@ -86,15 +100,23 @@ export function MapView({
     () =>
       fxEvents.length === 0
         ? NO_TRAILS
-        : buildTokenTrails(fxEvents, {
-            positions,
-            positionOfCharacter: new Map(view.characters.map((item) => [item.id, item.position])),
-            pathOfMove,
-          }),
-    [fxEvents, positions, pathOfMove, view.characters],
+        : buildTokenTrails(fxEvents, { positions, positionOfCharacter, pathOfMove }),
+    [fxEvents, positions, pathOfMove, positionOfCharacter],
   );
 
-  const { setTokenRef } = useTokenMotion(trails);
+  /** 这一批事件里谁撞了谁（单体伤害才撞，AOE 略过）。 */
+  const lunges = useMemo(
+    () =>
+      fxEvents.length === 0
+        ? NO_LUNGES
+        : buildTokenLunges(fxEvents, { positions, positionOfCharacter }),
+    [fxEvents, positions, positionOfCharacter],
+  );
+
+  const { setTokenRef } = useTokenMotion(trails, lunges);
+
+  /** 角色 id → 这一批里走位花了多久；伤害表现要等它走完再出现。 */
+  const trailDurations = useMemo(() => trailDurationsOf(trails), [trails]);
 
   // 让地图铺满容器：按容器宽高比扩展 viewBox，避免左右出现大片空白。
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -332,8 +354,9 @@ export function MapView({
           <EffectsLayer
             events={fxEvents}
             positions={positions}
-            positionsOfCharacter={new Map(view.characters.map((item) => [item.id, item.position]))}
+            positionsOfCharacter={positionOfCharacter}
             pathOfMove={pathOfMove}
+            trailDurations={trailDurations}
           />
         ) : null}
 
@@ -475,89 +498,92 @@ export function MapView({
                 ref={(element) => setTokenRef(character.id, element)}
                 onClick={() => onCharacter(character.id)}
               >
-                {isSelected || isTarget || isTargetable ? (
-                  <circle
-                    className={
-                      'token__ring' +
-                      (isTarget ? ' token__ring--target' : '') +
-                      (isTargetable && !isTarget ? ' token__ring--targetable' : '')
-                    }
-                    cx={point.x}
-                    cy={point.y}
-                    r={BOARD_SIZES.tokenRingRadius}
+                {/* 内层只负责"撞击"那种临时位移，外层负责沿路径走位，两者互不干扰 */}
+                <g className="token__lunge">
+                  {isSelected || isTarget || isTargetable ? (
+                    <circle
+                      className={
+                        'token__ring' +
+                        (isTarget ? ' token__ring--target' : '') +
+                        (isTargetable && !isTarget ? ' token__ring--targetable' : '')
+                      }
+                      cx={point.x}
+                      cy={point.y}
+                      r={BOARD_SIZES.tokenRingRadius}
+                    />
+                  ) : null}
+                  {isSelectable ? (
+                    <circle
+                      className="token__glow"
+                      cx={point.x}
+                      cy={point.y}
+                      r={BOARD_SIZES.tokenGlowRadius}
+                    />
+                  ) : null}
+                  <rect
+                    className="token__hp"
+                    x={point.x - BOARD_SIZES.hpBarWidth / 2}
+                    y={point.y + BOARD_SIZES.hpBarOffsetY}
+                    width={BOARD_SIZES.hpBarWidth}
+                    height={BOARD_SIZES.hpBarHeight}
+                    rx={3.5}
                   />
-                ) : null}
-                {isSelectable ? (
-                  <circle
-                    className="token__glow"
-                    cx={point.x}
-                    cy={point.y}
-                    r={BOARD_SIZES.tokenGlowRadius}
+                  <rect
+                    className="token__hp-fill"
+                    x={point.x - 21}
+                    y={point.y + BOARD_SIZES.hpBarOffsetY}
+                    width={BOARD_SIZES.hpBarWidth * ratio}
+                    height={BOARD_SIZES.hpBarHeight}
+                    rx={3.5}
+                    fill={PLAYER_COLORS[character.owner]}
                   />
-                ) : null}
-                <rect
-                  className="token__hp"
-                  x={point.x - BOARD_SIZES.hpBarWidth / 2}
-                  y={point.y + BOARD_SIZES.hpBarOffsetY}
-                  width={BOARD_SIZES.hpBarWidth}
-                  height={BOARD_SIZES.hpBarHeight}
-                  rx={3.5}
-                />
-                <rect
-                  className="token__hp-fill"
-                  x={point.x - 21}
-                  y={point.y + BOARD_SIZES.hpBarOffsetY}
-                  width={BOARD_SIZES.hpBarWidth * ratio}
-                  height={BOARD_SIZES.hpBarHeight}
-                  rx={3.5}
-                  fill={PLAYER_COLORS[character.owner]}
-                />
-                <text
-                  className="token__hp-text"
-                  x={point.x}
-                  y={point.y + BOARD_SIZES.hpTextOffsetY}
-                >
-                  {character.hp}
-                </text>
-                <circle
-                  className="token__outer"
-                  cx={point.x}
-                  cy={point.y}
-                  r={BOARD_SIZES.tokenRadius + 4}
-                  fill="none"
-                  stroke={PLAYER_COLORS[character.owner]}
-                  strokeWidth={4}
-                />
-                <circle
-                  className="token__body"
-                  cx={point.x}
-                  cy={point.y}
-                  r={BOARD_SIZES.tokenRadius}
-                  fill={PLAYER_COLORS[character.owner]}
-                  stroke={PLAYER_COLORS[character.owner]}
-                />
-                {renderPortrait(character.typeId, point.x, point.y, character.id)}
-                {portraitFor(character.typeId) === null ? (
-                  <text className="token__initial" x={point.x} y={point.y + 6}>
-                    {text.character[character.typeId].name.slice(0, 1)}
-                  </text>
-                ) : null}
-                {statuses.map((status, index) => (
-                  <circle
-                    key={status}
-                    className="token__status"
-                    cx={
-                      point.x -
-                      ((statuses.length - 1) * BOARD_SIZES.spinnerGap) / 2 +
-                      index * BOARD_SIZES.spinnerGap
-                    }
-                    cy={point.y + BOARD_SIZES.spinnerOffsetY}
-                    r={BOARD_SIZES.spinnerRadius}
-                    fill={STATUS_COLORS[status]}
+                  <text
+                    className="token__hp-text"
+                    x={point.x}
+                    y={point.y + BOARD_SIZES.hpTextOffsetY}
                   >
-                    <title>{text.status[status].name}</title>
-                  </circle>
-                ))}
+                    {character.hp}
+                  </text>
+                  <circle
+                    className="token__outer"
+                    cx={point.x}
+                    cy={point.y}
+                    r={BOARD_SIZES.tokenRadius + 4}
+                    fill="none"
+                    stroke={PLAYER_COLORS[character.owner]}
+                    strokeWidth={4}
+                  />
+                  <circle
+                    className="token__body"
+                    cx={point.x}
+                    cy={point.y}
+                    r={BOARD_SIZES.tokenRadius}
+                    fill={PLAYER_COLORS[character.owner]}
+                    stroke={PLAYER_COLORS[character.owner]}
+                  />
+                  {renderPortrait(character.typeId, point.x, point.y, character.id)}
+                  {portraitFor(character.typeId) === null ? (
+                    <text className="token__initial" x={point.x} y={point.y + 6}>
+                      {text.character[character.typeId].name.slice(0, 1)}
+                    </text>
+                  ) : null}
+                  {statuses.map((status, index) => (
+                    <circle
+                      key={status}
+                      className="token__status"
+                      cx={
+                        point.x -
+                        ((statuses.length - 1) * BOARD_SIZES.spinnerGap) / 2 +
+                        index * BOARD_SIZES.spinnerGap
+                      }
+                      cy={point.y + BOARD_SIZES.spinnerOffsetY}
+                      r={BOARD_SIZES.spinnerRadius}
+                      fill={STATUS_COLORS[status]}
+                    >
+                      <title>{text.status[status].name}</title>
+                    </circle>
+                  ))}
+                </g>
               </g>
             );
           })}

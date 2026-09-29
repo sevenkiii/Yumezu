@@ -9,19 +9,29 @@
  * 动画结束不留下残留 transform（fill: 'none'）——终点就等于 token 的静态坐标。
  */
 
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import type { CharacterId } from '../core/GameState';
-import type { TokenTrail, TrailPoint } from './tokenTrail';
+import {
+  HOP_SETTLE,
+  KNOCK_DISTANCE,
+  LUNGE_ANTICIPATE,
+  LUNGE_APPROACH,
+  LUNGE_BACK,
+  LUNGE_HOLD,
+  LUNGE_IMPACT,
+  LUNGE_MAX,
+  LUNGE_MS,
+  LUNGE_SCALE,
+  STAGGER_MS,
+  lungeDelayMs,
+  trailDurationMs,
+  trailDurationsOf,
+} from './motionTiming';
+import type { TokenLunge, TokenTrail, TrailPoint } from './tokenTrail';
 
-/** 每一跳的时长（毫秒）。 */
-const HOP_MS = 170;
-/** 每一跳末尾"站定"的比例，让逐跳的节奏看得出来。 */
-const HOP_SETTLE = 0.3;
 /** 跳起时放大一点，像是离开了桌面；设为 0 就退化成纯平移。 */
 const HOP_LIFT = 0.14;
-/** 同一批事件里有多个角色同时动时的错开量。 */
-const STAGGER_MS = 70;
 
 export interface TokenMotion {
   /** 交给 <g className="token"> 的 ref 回调。 */
@@ -31,9 +41,14 @@ export interface TokenMotion {
 /** SSR（渲染冒烟测试）里没有 DOM，退回 useEffect 以免 React 报警。 */
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
-export function useTokenMotion(trails: readonly TokenTrail[]): TokenMotion {
+export function useTokenMotion(
+  trails: readonly TokenTrail[],
+  lunges: readonly TokenLunge[] = [],
+): TokenMotion {
   const elements = useRef(new Map<CharacterId, SVGGElement>());
   const running = useRef(new Map<CharacterId, Animation>());
+  /** 角色 id → 这一批里它走位要花的时间（没走位就是 0）。 */
+  const trailDurations = useMemo(() => trailDurationsOf(trails), [trails]);
 
   const setTokenRef = useCallback((characterId: CharacterId, element: SVGGElement | null): void => {
     if (element === null) elements.current.delete(characterId);
@@ -51,7 +66,7 @@ export function useTokenMotion(trails: readonly TokenTrail[]): TokenMotion {
       running.current.set(
         trail.characterId,
         element.animate(keyframesOf(trail), {
-          duration: (trail.points.length - 1) * HOP_MS,
+          duration: trailDurationMs(trail),
           delay: index * STAGGER_MS,
           easing: 'ease-in-out',
           fill: 'none',
@@ -59,6 +74,32 @@ export function useTokenMotion(trails: readonly TokenTrail[]): TokenMotion {
       );
     });
   }, [trails]);
+
+  // 撞击：出手方冲过去，目标被顶一下。两者都在内层 token__lunge 上做，
+  // 所以"先移动后攻击"（例如星奔）时，撞击是叠在走位之上的。
+  useIsomorphicLayoutEffect(() => {
+    if (lunges.length === 0 || prefersReducedMotion()) return;
+    lunges.forEach((lunge, index) => {
+      // 先走完再撞：同一个角色这一批里如果先位移了，撞击要等它到位
+      const delay = lungeDelayMs(lunge, trailDurations, index);
+      const attacker = motionOf(elements.current.get(lunge.characterId));
+      if (attacker !== null) {
+        start(attacker, lungeKeyframes(lunge), {
+          duration: LUNGE_MS,
+          delay,
+          easing: 'ease-in-out',
+        });
+      }
+      const target = motionOf(elements.current.get(lunge.targetId));
+      if (target !== null) {
+        start(target, knockKeyframes(lunge), {
+          duration: LUNGE_MS * 0.55,
+          delay: delay + LUNGE_MS * LUNGE_IMPACT,
+          easing: 'ease-out',
+        });
+      }
+    });
+  }, [lunges, trailDurations]);
 
   useEffect(() => {
     const animations = running.current;
@@ -69,6 +110,66 @@ export function useTokenMotion(trails: readonly TokenTrail[]): TokenMotion {
   }, []);
 
   return { setTokenRef };
+}
+
+/** 内层的运动层：走位在外层，撞击叠加在这里，两者互不干扰。 */
+function motionOf(element: SVGGElement | undefined): SVGGElement | null {
+  if (element === undefined) return null;
+  const inner = element.querySelector('.token__lunge');
+  return inner instanceof SVGGElement ? inner : null;
+}
+
+function start(
+  element: SVGGElement,
+  keyframes: Keyframe[],
+  timing: KeyframeAnimationOptions,
+): void {
+  for (const running of element.getAnimations()) running.cancel();
+  element.animate(keyframes, { ...timing, fill: 'none' });
+}
+
+/** 出手方：冲过去撞一下再退回原位。 */
+function lungeKeyframes(lunge: TokenLunge): Keyframe[] {
+  const dx = lunge.to.x - lunge.from.x;
+  const dy = lunge.to.y - lunge.from.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance === 0) return [{ transform: 'none' }];
+  const reach = Math.min(distance * LUNGE_APPROACH, LUNGE_MAX);
+  const x = ((dx / distance) * reach).toFixed(2);
+  const y = ((dy / distance) * reach).toFixed(2);
+  const backX = ((-dx / distance) * LUNGE_BACK).toFixed(2);
+  const backY = ((-dy / distance) * LUNGE_BACK).toFixed(2);
+  return [
+    { offset: 0, transform: 'translate(0px, 0px)', easing: 'ease-in' },
+    // 先微微后仰蓄力，再冲出去
+    {
+      offset: LUNGE_ANTICIPATE,
+      transform: `translate(${backX}px, ${backY}px)`,
+      easing: 'ease-out',
+    },
+    { offset: LUNGE_IMPACT, transform: `translate(${x}px, ${y}px) scale(${LUNGE_SCALE})` },
+    { offset: LUNGE_HOLD, transform: `translate(${x}px, ${y}px) scale(1.04)` },
+    { offset: 1, transform: 'translate(0px, 0px)' },
+  ];
+}
+
+/** 目标：被顶开、抖一下再回位。 */
+function knockKeyframes(lunge: TokenLunge): Keyframe[] {
+  const dx = lunge.to.x - lunge.from.x;
+  const dy = lunge.to.y - lunge.from.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance === 0) return [{ transform: 'none' }];
+  const x = ((-dx / distance) * KNOCK_DISTANCE).toFixed(2);
+  const y = ((-dy / distance) * KNOCK_DISTANCE).toFixed(2);
+  return [
+    { offset: 0, transform: 'translate(0px, 0px)' },
+    { offset: 0.35, transform: `translate(${x}px, ${y}px)`, easing: 'ease-out' },
+    {
+      offset: 0.7,
+      transform: `translate(${(Number(x) * 0.25).toFixed(2)}px, ${(Number(y) * 0.25).toFixed(2)}px)`,
+    },
+    { offset: 1, transform: 'translate(0px, 0px)' },
+  ];
 }
 
 /**

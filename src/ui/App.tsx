@@ -44,6 +44,7 @@ import {
 } from './interaction';
 import { createLocalTransport } from './transport';
 import { useGameSnapshot } from './useGame';
+import { MOTION_WINDOW_MS } from './motionTiming';
 
 export function App() {
   const text = useMemo(() => getText(), []);
@@ -68,7 +69,7 @@ export function App() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [devOpen, setDevOpen] = useState(false);
   const [bannerKey, setBannerKey] = useState(0);
-  /** 最近一次行动的事件，用于播"伤害飘字 / 移动轨迹"等表现，1 秒后清空。 */
+  /** 最近一次行动的事件，用于播"伤害飘字 / 移动轨迹"等表现，动画放完再清空。 */
   const [fxEvents, setFxEvents] = useState<readonly GameEvent[]>([]);
   /** ?select= 只生效一次，避免"清空选中后又被自动选回来"。 */
   const selectApplied = useRef(false);
@@ -101,7 +102,7 @@ export function App() {
   useEffect(() => {
     if (snapshot.eventSeq === 0) return;
     setFxEvents(snapshot.lastEvents);
-    const timer = setTimeout(() => setFxEvents([]), 1000);
+    const timer = setTimeout(() => setFxEvents([]), MOTION_WINDOW_MS);
     return () => clearTimeout(timer);
   }, [snapshot.eventSeq, snapshot.lastEvents]);
 

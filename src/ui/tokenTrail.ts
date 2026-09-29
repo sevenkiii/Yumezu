@@ -23,7 +23,7 @@ export interface TokenTrail {
   readonly points: readonly TrailPoint[];
 }
 
-export interface TokenTrailContext {
+export interface TokenPositionContext {
   /** 节点 id → 棋盘坐标。 */
   readonly positions: ReadonlyMap<VertexId, TrailPoint>;
   /**
@@ -31,6 +31,9 @@ export interface TokenTrailContext {
    * SWAP 事件只给了两个角色 id，用它可以反推各自的起点（对方的当前位置）。
    */
   readonly positionOfCharacter: ReadonlyMap<CharacterId, VertexId>;
+}
+
+export interface TokenTrailContext extends TokenPositionContext {
   /**
    * 逐跳路径（相邻节点的连线）。第三个参数是**谁在走**——路径要按这个角色的
    * 移动规则算（封路、敌方角色都不可穿越），见 `createMovePathOf`。
@@ -113,4 +116,52 @@ export function buildTokenTrails(
   return [...trails]
     .filter(([, points]) => points.length >= 2)
     .map(([characterId, points]) => ({ characterId, points }));
+}
+
+/** 一次"撞过去"：出手方从 from 冲 to 方向撞一下，目标被轻轻顶开。 */
+export interface TokenLunge {
+  /** 撞过去的角色。 */
+  readonly characterId: CharacterId;
+  /** 被撞的角色。 */
+  readonly targetId: CharacterId;
+  readonly from: TrailPoint;
+  readonly to: TrailPoint;
+}
+
+/**
+ * 把这一批事件里的伤害翻译成"撞一下"。
+ *
+ * 只做**单体**伤害：同一次出手打了 2 个以上目标就是 AOE，让出手方冲过去撞谁都不对，
+ * 所以整批略过（这就是" AOE 除外"的实现方式，不必去认技能类型）。
+ * 没有出手角色的伤害（陷阱等）同样跳过。
+ */
+export function buildTokenLunges(
+  events: readonly GameEvent[],
+  context: TokenPositionContext,
+): readonly TokenLunge[] {
+  const damagedBy = new Map<CharacterId, Set<CharacterId>>();
+  for (const event of events) {
+    if (event.type !== 'DAMAGED') continue;
+    const sourceId = event.source.sourceCharacterId;
+    if (sourceId === null || sourceId === event.targetId) continue;
+    const targets = damagedBy.get(sourceId) ?? new Set<CharacterId>();
+    targets.add(event.targetId);
+    damagedBy.set(sourceId, targets);
+  }
+
+  const pointAt = (characterId: CharacterId): TrailPoint | undefined => {
+    const vertex = context.positionOfCharacter.get(characterId);
+    return vertex === undefined ? undefined : context.positions.get(vertex);
+  };
+
+  const lunges: TokenLunge[] = [];
+  for (const [characterId, targets] of damagedBy) {
+    if (targets.size !== 1) continue;
+    const targetId = [...targets][0] as CharacterId;
+    const from = pointAt(characterId);
+    const to = pointAt(targetId);
+    if (from === undefined || to === undefined) continue;
+    lunges.push({ characterId, targetId, from, to });
+  }
+  return lunges;
 }
