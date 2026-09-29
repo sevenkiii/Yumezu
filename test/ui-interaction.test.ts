@@ -67,6 +67,35 @@ function expectPlayable(state: GameState, action: Action | null): Action {
 }
 
 describe('UI 交互层：选中 → 高亮 → 点两次执行', () => {
+  it('不给"移动 0 格"的落点：脚下节点不高亮、点了也不会执行', () => {
+    const state = battle({});
+    const legal = getLegalActions(state);
+    const ui = select(state, 'P1:Nana');
+    const positions = new Map(state.characters.map((item) => [item.id, item.position]));
+    const selfNode = positions.get('P1:Nana') as number;
+
+    // 引擎照旧允许"移动 0 格"（RULES.md §8.1：等价于放弃这次移动）
+    expect(
+      legal.some(
+        (action) =>
+          action.type === 'MOVE' && action.characterId === 'P1:Nana' && action.to === selfNode,
+      ),
+    ).toBe(true);
+
+    // 不传位置表 = 引擎视角，落点里仍然有它
+    expect(computeHighlights(legal, ui).moveNodes.has(selfNode)).toBe(true);
+
+    // 界面视角：剔掉脚下这个点，其它落点保留
+    const highlights = computeHighlights(legal, ui, positions);
+    expect(highlights.moveNodes.has(selfNode)).toBe(false);
+    expect(highlights.moveNodes.size).toBeGreaterThan(0);
+
+    // 点脚下什么也不发生，不会白扔一个行动
+    const after = clickNode(ui, highlights, selfNode);
+    expect(after).toEqual(ui);
+    expect(actionAfterClick(after, legal, positions)).toBeNull();
+  });
+
   it('选中角色后直接给出可达点、可攻击对象与技能可用状态', () => {
     const state = battle({});
     const { highlights } = step(state, select(state, 'P1:Nana'));

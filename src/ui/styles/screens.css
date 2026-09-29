@@ -1,0 +1,77 @@
+/**
+ * 整屏层：开局界面与结算横幅。
+ */
+
+@layer screens {
+  /* ---------- 开局界面 ---------- */
+
+  .new-game {
+    width: min(420px, 92vw);
+    display: grid;
+    gap: 12px;
+    padding: 26px 24px;
+    /* 开局界面背后是整张星云图，用不透明底才不会让文字跟画面打架 */
+    background: var(--panel-overlay);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .new-game__title {
+    margin: 0;
+    color: var(--text);
+    font-size: 34px;
+    letter-spacing: 8px;
+    text-align: center;
+    text-shadow: 0 2px 18px rgba(255, 255, 255, 0.9);
+  }
+
+  .new-game__subtitle {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .new-game__field {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .new-game__field input {
+    font: inherit;
+    color: var(--text);
+    min-height: 44px;
+    padding: 10px 12px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .new-game__hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .new-game__buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  /* ---------- 结算横幅 ---------- */
+
+  .result-banner {
+    padding: 8px;
+    background: rgba(31, 157, 122, 0.14);
+    border: 1px solid rgba(31, 157, 122, 0.4);
+    border-radius: var(--radius);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+}

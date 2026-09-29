@@ -1,0 +1,120 @@
+/**
+ * 基础层：重置、页面底色、通用控件（按钮 / 标签）。
+ *
+ * 这一层最"通用"，所以优先级最低：任何组件都能盖掉它。
+ */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family:
+      'Noto Sans SC',
+      'PingFang SC',
+      'Microsoft YaHei',
+      system-ui,
+      -apple-system,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
+    overflow: hidden;
+  }
+
+  /* 页面底纹：星云图压得很浅，只当纸纹用 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: url('../../../assets/ui/hrmk/Galaxy_log.jpg') center / cover no-repeat;
+    opacity: 0.26;
+  }
+
+  /* ---------- 按钮 ---------- */
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 7px 12px;
+    min-height: 38px;
+    cursor: pointer;
+    transition: background 120ms ease;
+  }
+
+  button:hover:not(:disabled) {
+    background: #ffffff;
+  }
+
+  button:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+
+  button.primary {
+    background: var(--accent);
+    border-color: transparent;
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  button.ghost {
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  /*
+   * 卡面例外：牌的"脸"是 assets/ui/card.png，不是按钮底色。
+   *
+   * 上面那条 button:hover:not(:disabled) 的特异性是 (0,2,1)，比
+   * .char-card__body / .hand-card__main 的 (0,1,0) 高。不显式压住的话，
+   * 鼠标一移到牌上就会把整张牌刷成白板（手机上点完 :hover 会一直粘着，
+   * 看起来就像"选中卡牌变白"）。这里用 (0,3,0) 的规则把卡面钉回透明。
+   */
+  .char-card__body,
+  .char-card__body:hover:not(:disabled),
+  .char-card__body:focus-visible,
+  .hand-card__main,
+  .hand-card__main:hover:not(:disabled),
+  .hand-card__main:focus-visible {
+    background: transparent;
+  }
+
+  /* 功能牌上的"弃置"小钮同理：hover 用暖色，别刷白 */
+  .hand-card__discard:hover:not(:disabled) {
+    background: rgba(231, 200, 135, 0.22);
+  }
+
+  /* ---------- 标签 ---------- */
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .chip--ready {
+    color: #ffffff;
+    background: var(--accent);
+    border-color: transparent;
+    font-weight: 600;
+  }
+}

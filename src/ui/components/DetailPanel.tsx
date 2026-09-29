@@ -9,7 +9,7 @@ import { characterDefinition } from '../../characters/Character';
 import type { CharacterId } from '../../core/GameState';
 import type { PlayerView } from '../../core/View';
 import type { UiText } from '../i18n';
-import { PLAYER_COLORS, STATUS_COLORS, STATUS_ORDER } from '../theme';
+import { PLAYER_INKS, STATUS_INKS, STATUS_ORDER } from '../theme';
 import { Portrait } from './Portrait';
 
 export interface DetailPanelProps {
@@ -65,7 +65,7 @@ export function DetailPanel({ view, text, characterId, handCardId }: DetailPanel
           className="detail__art-img"
         />
       </div>
-      <p className="detail__name" style={{ color: PLAYER_COLORS[character.owner] }}>
+      <p className="detail__name" style={{ color: PLAYER_INKS[character.owner] }}>
         {characterText.name}
       </p>
       <p className="detail__role">{characterText.role}</p>
@@ -76,7 +76,7 @@ export function DetailPanel({ view, text, characterId, handCardId }: DetailPanel
             className="hp-bar__fill"
             style={{
               width: (ratio * 100).toFixed(1) + '%',
-              background: PLAYER_COLORS[character.owner],
+              background: PLAYER_INKS[character.owner],
             }}
           />
         </span>
@@ -89,7 +89,7 @@ export function DetailPanel({ view, text, characterId, handCardId }: DetailPanel
             <span
               key={status}
               className="char-card__status"
-              style={{ borderColor: STATUS_COLORS[status], color: STATUS_COLORS[status] }}
+              style={{ borderColor: STATUS_INKS[status], color: STATUS_INKS[status] }}
               title={text.status[status].description}
             >
               {text.status[status].name}

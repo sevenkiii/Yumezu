@@ -1,0 +1,201 @@
+/**
+ * 布局层：应用骨架、顶栏、队伍条、右侧栏。
+ *
+ * 布局原则：舞台是地图，它吃掉全部剩余高度；顶栏与侧栏都是"小条"，
+ * 合计高度压到最低，别把地图挤没。
+ */
+
+@layer layout {
+  /* ---------- 骨架 ---------- */
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    height: 100dvh;
+    padding: 8px;
+    /* 极端矮屏时整页滚动，而不是把地图压没 */
+    overflow: auto;
+  }
+
+  /* 开局界面：居中一张卡 */
+  .app--start {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app--start::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    /* 这一屏几乎不遮罩，让星云图当主视觉 */
+    background:
+      linear-gradient(rgba(232, 240, 248, 0.16), rgba(232, 240, 248, 0.52)),
+      url('../../../assets/ui/hrmk/Galaxy_log.jpg') center / cover no-repeat;
+  }
+
+  .app__main {
+    flex: 1 1 auto;
+    min-height: 240px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  /* 地图是"铺在桌上的一张纸"：浅底 + 细边 + 柔和投影 */
+  .app__board {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 4px;
+    background: rgba(252, 254, 255, 0.55);
+    border: 1px solid #b9cbe0;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .app__bottom {
+    flex: 0 0 auto;
+    display: grid;
+    gap: 5px;
+  }
+
+  .app__side {
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    overflow: auto;
+    animation: side-in 220ms ease;
+  }
+
+  .app__side--closed {
+    display: none;
+  }
+
+  @keyframes side-in {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* ---------- 顶栏 ---------- */
+
+  .top-bar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: center;
+    min-height: 46px;
+    padding: 6px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .top-bar__brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+
+  .top-bar__brand strong {
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+
+  .top-bar__subtitle {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .top-bar__status {
+    display: flex;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+
+  .top-bar__enemy {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .top-bar__buttons {
+    display: flex;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+
+  .top-bar__buttons button {
+    min-height: 34px;
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  /* ---------- 队伍条 ---------- */
+
+  /* 顶栏里的对手队伍：一行小卡（TeamPanel variant="mini"） */
+  .team-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .team-strip__title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .team-strip__list {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    scrollbar-width: thin;
+  }
+
+  /* 整条队伍版（TeamPanel variant="full"）：目前 UI 只用 mini，留着备用 */
+  .team-rail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    flex: 0 0 auto;
+  }
+
+  .team-rail__title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .team-rail__list {
+    display: flex;
+    gap: 6px;
+  }
+}

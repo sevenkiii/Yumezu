@@ -102,9 +102,20 @@ function setOf<T>(values: Iterable<T>): Set<T> {
 
 const NO_ACTIONS: readonly Action[] = [];
 
+/**
+ * 角色当前位置（角色 id → 所在节点）。
+ *
+ * 用来识别"原地移动"：`RULES.md` §8.1 允许"移动 0 格（等价于放弃这次移动）"，
+ * 所以引擎的合法行动里会带一条"走到自己脚下"的 MOVE。但界面是"单击即执行"，
+ * 点到自己脚下等于白扔一个行动（顶栏已经有「放弃行动」），因此界面不给这个落点。
+ * 只是**不提供**而已：引擎与规则都没变，技能里的"移动 0 格"（Spica）照旧保留。
+ */
+export type CharacterPositions = ReadonlyMap<CharacterId, VertexId>;
+
 export function computeHighlights(
   legalActions: readonly Action[] = NO_ACTIONS,
   ui: UiState = INITIAL_UI_STATE,
+  positions?: CharacterPositions,
 ): UiHighlights {
   const selectableCharacters = setOf(
     legalActions
@@ -134,7 +145,13 @@ export function computeHighlights(
   if (pending.kind === 'IDLE' && selected !== null) {
     // 默认形态：选中角色 → 直接给出"能去哪 / 能打谁"，技能圆钮待命
     for (const action of legalActions) {
-      if (action.type === 'MOVE' && action.characterId === selected) moveNodes.add(action.to);
+      if (
+        action.type === 'MOVE' &&
+        action.characterId === selected &&
+        !isNoopMove(action, positions)
+      ) {
+        moveNodes.add(action.to);
+      }
       if (action.type === 'ATTACK' && action.characterId === selected) {
         targetCharacters.add(action.targetId);
       }
@@ -149,6 +166,7 @@ export function computeHighlights(
     case 'MOVE':
       for (const action of legalActions) {
         if (action.type !== 'MOVE' || action.characterId !== pending.characterId) continue;
+        if (isNoopMove(action, positions)) continue;
         moveNodes.add(action.to);
         if (pending.to !== null && action.to === pending.to) pendingAction = action;
       }
@@ -458,12 +476,22 @@ export function confirmAction(highlights: UiHighlights): Action | null {
  * 返回 null 表示这一步只是选中 / 瞄准（参数还没齐，需要再点一次）；
  * 返回 Action 表示参数已经齐了，界面应当立刻提交，不再需要确认按钮。
  */
-export function actionAfterClick(next: UiState, legalActions: readonly Action[]): Action | null {
-  const highlights = computeHighlights(legalActions, next);
+export function actionAfterClick(
+  next: UiState,
+  legalActions: readonly Action[],
+  positions?: CharacterPositions,
+): Action | null {
+  const highlights = computeHighlights(legalActions, next, positions);
   return highlights.canConfirm ? highlights.pendingAction : null;
 }
 
 /* ---------- 内部工具 ---------- */
+
+/** 这条 MOVE 是不是"原地移动"（移动 0 格）。 */
+function isNoopMove(action: Action, positions: CharacterPositions | undefined): boolean {
+  if (action.type !== 'MOVE' || positions === undefined) return false;
+  return positions.get(action.characterId) === action.to;
+}
 
 function skillChoicesFor(legalActions: readonly Action[], characterId: CharacterId): SkillChoice[] {
   return legalActions

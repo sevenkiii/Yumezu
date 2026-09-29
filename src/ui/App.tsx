@@ -76,8 +76,16 @@ export function App() {
   const lastHashRef = useRef(snapshot.stateHash);
 
   const legal = snapshot.legalActions;
-  const highlights = useMemo(() => computeHighlights(legal, ui), [legal, ui]);
   const view = snapshot.view;
+  /** 角色当前位置：用来把"原地移动"（规则允许）从可点落点里剔掉，见 interaction.ts。 */
+  const characterPositions = useMemo(
+    () => new Map(view.characters.map((character) => [character.id, character.position])),
+    [view.characters],
+  );
+  const highlights = useMemo(
+    () => computeHighlights(legal, ui, characterPositions),
+    [legal, ui, characterPositions],
+  );
   const selectedCharacterId = ui.selectedCharacterId;
   const yourTurn = view.currentPlayer === view.viewer && !snapshot.finished;
 
@@ -113,7 +121,7 @@ export function App() {
   }, [started]);
 
   const update = (fn: (current: UiState, current_: UiHighlights) => UiState): void => {
-    setUi((previous) => fn(previous, computeHighlights(legal, previous)));
+    setUi((previous) => fn(previous, computeHighlights(legal, previous, characterPositions)));
   };
 
   const execute = (action: Action | null): void => {
@@ -126,7 +134,7 @@ export function App() {
    */
   const act = (fn: (current: UiState, current_: UiHighlights) => UiState): void => {
     const next = fn(ui, highlights);
-    const nextHighlights = computeHighlights(legal, next);
+    const nextHighlights = computeHighlights(legal, next, characterPositions);
     if (nextHighlights.canConfirm && nextHighlights.pendingAction !== null) {
       transport.dispatch(nextHighlights.pendingAction);
       setUi(INITIAL_UI_STATE);
@@ -147,7 +155,11 @@ export function App() {
     const target = own[Number.isNaN(index) ? 0 : index];
     if (target === undefined) return;
     setUi(() =>
-      clickCharacter(INITIAL_UI_STATE, computeHighlights(legal, INITIAL_UI_STATE), target.id),
+      clickCharacter(
+        INITIAL_UI_STATE,
+        computeHighlights(legal, INITIAL_UI_STATE, characterPositions),
+        target.id,
+      ),
     );
   }, [started, urlParams, view, ui.selectedCharacterId, legal]);
 
@@ -348,7 +360,11 @@ export function App() {
               onDiscard={() => {
                 if (ui.pending.kind !== 'CARD') return;
                 const handCardId = ui.pending.handCardId;
-                execute(confirmAction(computeHighlights(legal, selectDiscard(ui, handCardId))));
+                execute(
+                  confirmAction(
+                    computeHighlights(legal, selectDiscard(ui, handCardId), characterPositions),
+                  ),
+                );
               }}
               onChooseStatus={onStatusClick}
             />

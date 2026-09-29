@@ -1,0 +1,203 @@
+/**
+ * 响应式层：所有 @media 规则集中在这里，方便一眼看完"手机端长什么样"。
+ *
+ * 这一层优先级最高，所以可以放心覆盖任何组件的基础值。
+ * 断点：
+ *   1101px 起 —— 宽屏，右侧栏常驻
+ *   900px 及以下 —— 手机 / 窄屏，卡牌完整显示、侧栏改成浮层
+ *   680px 及以下（按高度） —— 矮屏压缩顶栏
+ *   另外还有一条 (hover: hover) —— 只有真带鼠标的设备才做悬停抬起
+ */
+
+@layer responsive {
+  /* ---------- 宽屏：右侧栏常驻 ---------- */
+
+  @media (min-width: 1101px) {
+    .app__side--closed {
+      display: flex;
+    }
+
+    /* 右侧已经常驻了，顶栏就不用再放一个开关 */
+    .top-bar__buttons .panel-toggle {
+      display: none;
+    }
+  }
+
+  /* ---------- 窄屏（手机 / 竖屏） ---------- */
+
+  @media (max-width: 900px) {
+    /* 侧栏从"占一列"改成底部浮层 */
+    .app__main {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app__side {
+      position: fixed;
+      left: 8px;
+      right: 8px;
+      bottom: 8px;
+      max-height: 58dvh;
+      padding: 10px;
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 24px 56px rgba(34, 48, 74, 0.3);
+      z-index: 30;
+    }
+
+    .top-bar {
+      flex-wrap: wrap;
+    }
+
+    .top-bar__subtitle {
+      display: none;
+    }
+
+    /* 地图倾斜得温和一点，免得边缘被裁掉 */
+    .map--focused {
+      transform: perspective(680px) rotateX(16deg) scale(1.05);
+    }
+
+    .map-hint {
+      max-width: 92%;
+      font-size: 11px;
+    }
+
+    .map-actions {
+      bottom: calc(1.5% + 156px);
+    }
+
+    /* 手机不再把牌压到屏幕外：完整显示，选中只抬起一点点 */
+    :root {
+      --fan-peek: 0px;
+    }
+
+    .table__fan {
+      bottom: 0.5%;
+    }
+
+    .fan-slot + .fan-slot {
+      margin-left: -58px;
+    }
+
+    .fan-slot:has(.char-card--selected),
+    .fan-slot:has(.hand-card--selected) {
+      --pull: -14px;
+    }
+
+    /* 牌整体缩小一档 */
+    .char-card--full {
+      width: 108px;
+      height: 150px;
+    }
+
+    .char-card--full .char-card__body {
+      padding: 16px 12px 22px;
+    }
+
+    .char-card--full .char-card__art {
+      width: 66px;
+      height: 66px;
+      margin-top: 2px;
+    }
+
+    .char-card--full .char-card__name {
+      font-size: 12px;
+    }
+
+    .char-card--full .char-card__skill {
+      right: 6px;
+      bottom: 6px;
+      width: 32px;
+      height: 32px;
+    }
+
+    .char-card__skill-inner {
+      width: 26px;
+      height: 26px;
+    }
+
+    .hand-card {
+      width: 92px;
+      height: 128px;
+    }
+
+    .hand-card__seal {
+      width: 46px;
+      height: 46px;
+      margin-top: 2px;
+      font-size: 20px;
+    }
+
+    /*
+     * 注意：这里曾经想缩小功能牌的字号 / 行数（名字 12px、描述 3 行），
+     * 但旧文件里那两条被排在后面的普通规则盖掉了，实际从来没生效过。
+     * 重写这一轮先保持原样（1:1），要不要真的缩，等铺主题时再定。
+     */
+
+    /* 详情仍然展现在卡牌旁边（挡住别的牌没关系，取消选中就收起来） */
+    .card-detail {
+      left: calc(100% + 4px);
+      right: auto;
+      bottom: 0;
+      width: 152px;
+      max-width: 40vw;
+    }
+
+    /* 靠右半区的牌把详情翻到左边，避免探出屏幕 */
+    .card-detail--flip {
+      left: auto;
+      right: calc(100% + 4px);
+    }
+
+    .card-detail .detail {
+      padding: 6px 8px;
+    }
+
+    .card-detail .detail__title {
+      margin-bottom: 4px;
+      font-size: 10px;
+    }
+
+    .card-detail .detail__name {
+      font-size: 14px;
+    }
+
+    .card-detail .detail__role {
+      margin: 1px 0 4px;
+    }
+
+    .card-detail .detail__stats {
+      gap: 1px 6px;
+    }
+  }
+
+  /* ---------- 矮屏：把顶栏压薄，给地图让高度 ---------- */
+
+  @media (max-height: 680px) {
+    .app {
+      gap: 4px;
+      padding: 6px;
+    }
+
+    .top-bar {
+      min-height: 40px;
+      padding: 4px 8px;
+    }
+
+    .top-bar__brand strong {
+      font-size: 15px;
+    }
+  }
+
+  /* ---------- 只有真带鼠标的设备才做悬停抬起 ---------- */
+  /* 触屏上点一下会把 :hover 粘住，牌会一直浮在最上层，挡住后面的操作。 */
+
+  @media (hover: hover) and (pointer: fine) {
+    .fan-slot:hover {
+      --pull: calc(-1 * var(--fan-peek, 0px) - 10px);
+      transform: translateY(calc(var(--lift, 0px) + var(--pull))) rotate(0deg) scale(1.03);
+      z-index: 60 !important;
+    }
+  }
+}

@@ -4,10 +4,11 @@
  * 组件不做任何规则判断：哪些节点/边可点，全部来自 highlights。
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GameEvent } from '../../core/Event';
-import { shortestPath } from '../../map/Graph';
 import { EffectsLayer } from './EffectsLayer';
+import { buildTokenTrails, createMovePathOf, type TokenTrail } from '../tokenTrail';
+import { useTokenMotion } from '../useTokenMotion';
 
 import type { CharacterId, CharacterTypeId, EdgeKey, VertexId } from '../../core/GameState';
 import type { PlayerView } from '../../core/View';
@@ -24,6 +25,9 @@ import {
   toBoardY,
 } from '../theme';
 import type { UiText } from '../i18n';
+
+/** 没有位移时的空轨迹：用常量，免得 memo 每次都给新数组。 */
+const NO_TRAILS: readonly TokenTrail[] = [];
 
 export interface MapViewProps {
   readonly view: PlayerView;
@@ -68,6 +72,30 @@ export function MapView({
 
   const deployRegion = view.phase === 'DEPLOY' ? view.spawn[view.viewer].region : [];
 
+  /** 逐跳路径：按引擎的移动规则绕开封路与敌方角色（RULES.md §8.1）。 */
+  const pathOfMove = useMemo(
+    () => createMovePathOf(view.graph, blocked, view.characters),
+    [view.graph, blocked, view.characters],
+  );
+
+  /**
+   * 这一批事件里谁要挪窝、该沿哪条线走。
+   * token 的静态坐标已经是终点，动画只负责把它从起点"走"过去。
+   */
+  const trails = useMemo(
+    () =>
+      fxEvents.length === 0
+        ? NO_TRAILS
+        : buildTokenTrails(fxEvents, {
+            positions,
+            positionOfCharacter: new Map(view.characters.map((item) => [item.id, item.position])),
+            pathOfMove,
+          }),
+    [fxEvents, positions, pathOfMove, view.characters],
+  );
+
+  const { setTokenRef } = useTokenMotion(trails);
+
   // 让地图铺满容器：按容器宽高比扩展 viewBox，避免左右出现大片空白。
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [aspect, setAspect] = useState(1);
@@ -111,17 +139,31 @@ export function MapView({
   const viewBox =
     viewBoxRect.x + ' ' + viewBoxRect.y + ' ' + viewBoxRect.width + ' ' + viewBoxRect.height;
 
-  const zoomBy = (factor: number): void => {
+  const zoomBy = useCallback((factor: number): void => {
     setCamera((current) => ({
       ...current,
       zoom: Math.min(4, Math.max(0.6, current.zoom * factor)),
     }));
-  };
+  }, []);
 
-  const handleWheel = (event: React.WheelEvent<SVGSVGElement>): void => {
-    event.preventDefault();
-    zoomBy(event.deltaY < 0 ? 1.12 : 1 / 1.12);
-  };
+  /**
+   * 滚轮缩放：必须自己挂监听，不能写成 <svg onWheel>。
+   *
+   * React 把 `wheel`（还有 touchstart / touchmove）注册成 **passive** 监听器，
+   * 免得页面滚动被阻塞；passive 监听器里调用 preventDefault() 是不生效的，
+   * Chrome 会直接报 "Unable to preventDefault inside passive event listener invocation."
+   * （地图不 stop 的话，滚轮会顺带把整页滚动）。所以这里用 { passive: false } 自己挂。
+   */
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (svg === null) return;
+    const onWheel = (event: WheelEvent): void => {
+      event.preventDefault();
+      zoomBy(event.deltaY < 0 ? 1.12 : 1 / 1.12);
+    };
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+  }, [zoomBy]);
 
   const handlePointerDown = (event: React.PointerEvent<SVGSVGElement>): void => {
     dragRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
@@ -253,7 +295,6 @@ export function MapView({
         className={focusKey === '' ? 'map' : 'map map--focused'}
         ref={svgRef}
         viewBox={viewBox}
-        onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -292,7 +333,7 @@ export function MapView({
             events={fxEvents}
             positions={positions}
             positionsOfCharacter={new Map(view.characters.map((item) => [item.id, item.position]))}
-            pathOfMove={(from, to) => shortestPath(view.graph, from, to) ?? [from, to]}
+            pathOfMove={pathOfMove}
           />
         ) : null}
 
@@ -428,7 +469,12 @@ export function MapView({
             const ratio = character.maxHp === 0 ? 0 : character.hp / character.maxHp;
 
             return (
-              <g key={character.id} className="token" onClick={() => onCharacter(character.id)}>
+              <g
+                key={character.id}
+                className="token"
+                ref={(element) => setTokenRef(character.id, element)}
+                onClick={() => onCharacter(character.id)}
+              >
                 {isSelected || isTarget || isTargetable ? (
                   <circle
                     className={

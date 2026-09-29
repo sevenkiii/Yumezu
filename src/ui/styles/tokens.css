@@ -1,0 +1,41 @@
+/**
+ * 设计变量：颜色、圆角、阴影、布局常量。
+ *
+ * 颜色只在这里定义，其它文件一律用 var() 取。想换主题就改这一个文件。
+ * （角色阵营色是例外：它跟着引擎的 PlayerId 走，定义在 ui/theme.ts 里，以行内样式下发。）
+ */
+
+@layer tokens {
+  :root {
+    /* 底色与面板 */
+    --bg-deep: #e8f0f8; /* 页面底色（星云图之上的雾蓝） */
+    --panel: rgba(252, 254, 255, 0.88);
+    --panel-strong: #fbfdff;
+    --border: #c3d3e4;
+
+    /* 文字 */
+    --text: #22304a;
+    /* 正文用色：比 --text 浅、比 --muted 深，长段落用它 */
+    --text-soft: #4a5a72;
+    --muted: #6b7c95;
+
+    /* 语义色 */
+    --accent: #2e6fb5; /* 主色：己方、可操作 */
+    --warn: #cf7a1f; /* 目标高亮 */
+    --danger: #c8503f; /* 伤害、封路 */
+
+    /* 形状 */
+    --radius: 12px;
+    /* 顶栏 / 棋盘这类大面板 */
+    --shadow-soft: 0 10px 24px rgba(34, 48, 74, 0.14);
+    /* 浮在地图上的浅色浮层（提示、浮动按钮、详情） */
+    --panel-overlay: #fafcff;
+    --shadow-float: 0 18px 40px rgba(34, 48, 74, 0.22);
+    /* 卡牌摆在桌面上：牌面本身是深色的，投影偏蓝一点才像落在浅色桌布上 */
+    --shadow-card: 0 10px 22px rgba(34, 48, 74, 0.24);
+    --shadow-card-lift: 0 18px 34px rgba(34, 48, 74, 0.32);
+
+    /* 底部扇形：桌面端把牌往下压，只露出上半部分 */
+    --fan-peek: 98px;
+  }
+}

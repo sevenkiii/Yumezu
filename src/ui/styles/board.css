@@ -1,0 +1,376 @@
+/**
+ * 棋盘层：地图 SVG 本体（边、节点、角色 token）、棋盘上的浮层
+ * （操作提示 / 浮动按钮 / 缩放按钮 / 回合幕布）以及特效。
+ *
+ * 坐标全在 SVG 的 viewBox 里，颜色跟随浅蓝纸面，节点用深色实心 + 白环保证对比度。
+ */
+
+@layer board {
+  /* ---------- 画布 ---------- */
+
+  .map {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 10px;
+    touch-action: none;
+    cursor: grab;
+    transition: transform 320ms cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+
+  .map:active {
+    cursor: grabbing;
+  }
+
+  /* 选中某张牌 / 进入技能瞄准时才倾斜，像是把地图在桌上摊开。
+     透视要够近、角度要够大才看得出来。 */
+  .map--focused {
+    transform: perspective(780px) rotateX(20deg) scale(1.04);
+    transform-origin: 50% 58%;
+    filter: drop-shadow(0 16px 24px rgba(34, 48, 74, 0.25));
+  }
+
+  /* ---------- 边 ---------- */
+
+  .edge {
+    stroke: rgba(37, 92, 153, 0.6);
+    stroke-width: 5;
+  }
+
+  .edge--blocked {
+    stroke: #c8503f;
+    stroke-width: 6.5;
+    stroke-dasharray: 12 9;
+    opacity: 0.85;
+  }
+
+  .edge--selectable {
+    stroke: #17866a;
+    stroke-width: 8;
+    cursor: pointer;
+  }
+
+  /* 盖在边上的透明加粗线，只为扩大点击区域 */
+  .edge-hit {
+    stroke: transparent;
+    stroke-width: 34;
+    cursor: pointer;
+  }
+
+  /* ---------- 节点 ---------- */
+
+  .node {
+    /* 深色实心 + 白色细环：浅蓝纸面上最清楚 */
+    fill: #2f4d74;
+    stroke: #ffffff;
+    stroke-width: 2.5;
+  }
+
+  .node--move {
+    fill: #1f9d7a;
+    stroke: #ffffff;
+    stroke-width: 3;
+  }
+
+  .node--pick {
+    fill: #d98324;
+    stroke: #ffffff;
+    stroke-width: 3;
+  }
+
+  .node--deploy {
+    fill: #2e6fb5;
+    stroke: #ffffff;
+    stroke-width: 3;
+  }
+
+  .node-hit {
+    fill: transparent;
+    cursor: pointer;
+  }
+
+  /* 出生区（开局随机部署时显示） */
+  .spawn-zone {
+    fill: rgba(46, 111, 181, 0.07);
+    stroke-width: 2.5;
+    stroke-dasharray: 9 9;
+  }
+
+  .trap {
+    fill: #ffb454;
+    stroke: #ffe0b0;
+    stroke-width: 2;
+  }
+
+  .shadow-mark {
+    fill: none;
+    stroke-width: 4;
+    stroke-dasharray: 10 8;
+    opacity: 0.85;
+  }
+
+  /* ---------- 角色 token ---------- */
+
+  .token {
+    cursor: pointer;
+    /* 移动动画（useTokenMotion）用 transform 驱动；以自身中心缩放才像"跳起来" */
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  /* 立绘外面套一圈白环（阵营色由 .token__outer 的行内 stroke 提供） */
+  .token__body {
+    stroke: #ffffff;
+    stroke-width: 4;
+  }
+
+  .token__initial {
+    fill: #10141f;
+    font-size: 24px;
+    font-weight: 700;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+
+  .token__hp {
+    fill: rgba(34, 48, 74, 0.45);
+    stroke: #ffffff;
+    stroke-width: 2;
+  }
+
+  .token__hp-text {
+    fill: #22304a;
+    font-size: 22px;
+    font-weight: 700;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: #ffffff;
+    stroke-width: 5;
+    pointer-events: none;
+  }
+
+  .token__ring {
+    fill: none;
+    /* 选中标记：浅色纸面上用深色虚线环，白环会看不见 */
+    stroke: rgba(34, 48, 74, 0.7);
+    stroke-width: 4;
+    stroke-dasharray: 8 6;
+  }
+
+  .token__ring--target {
+    stroke: var(--warn);
+    stroke-dasharray: none;
+  }
+
+  .token__ring--targetable {
+    stroke: var(--warn);
+    stroke-dasharray: 4 6;
+  }
+
+  .token__glow {
+    fill: none;
+    /* "这个角色有行动可做"的柔光：浅底上要用深一点的蓝 */
+    stroke: rgba(46, 111, 181, 0.3);
+    stroke-width: 2.5;
+  }
+
+  .token__status {
+    stroke: rgba(0, 0, 0, 0.45);
+    stroke-width: 2;
+  }
+
+  /* ---------- 棋盘浮层 ---------- */
+
+  /* 顶部一行操作提示 */
+  .map-hint {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 12;
+    max-width: min(680px, 86%);
+    padding: 5px 14px;
+    background: var(--panel-overlay);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 12px;
+    text-align: center;
+    box-shadow: var(--shadow-soft);
+    pointer-events: none;
+  }
+
+  /* 按需浮现的操作按钮（取代常驻的底部操作栏） */
+  .map-actions {
+    position: absolute;
+    left: 50%;
+    bottom: 104px;
+    transform: translateX(-50%);
+    z-index: 70;
+    display: flex;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--panel-overlay);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: var(--shadow-float);
+    animation: actions-in 160ms ease;
+  }
+
+  .map-actions button {
+    min-height: 32px;
+    padding: 4px 14px;
+    background: rgba(46, 111, 181, 0.1);
+    border-color: rgba(46, 111, 181, 0.3);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .map-actions button:hover:not(:disabled) {
+    background: rgba(46, 111, 181, 0.2);
+  }
+
+  @keyframes actions-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, 8px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  .map-zoom {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 14;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .map-zoom button {
+    width: 34px;
+    height: 34px;
+    min-height: 0;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  /* 回合交接幕布 */
+  .turn-banner {
+    position: absolute;
+    left: 50%;
+    top: 34%;
+    z-index: 30;
+    color: var(--text);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 8px;
+    text-shadow: 0 2px 18px rgba(255, 255, 255, 0.95);
+    pointer-events: none;
+    animation: banner 1.7s ease forwards;
+  }
+
+  @keyframes banner {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -35%) scale(0.9);
+    }
+    18% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -62%) scale(1.02);
+    }
+  }
+
+  /* ---------- 特效（由事件驱动，见 components/EffectsLayer.tsx） ---------- */
+
+  .fx-layer {
+    pointer-events: none;
+  }
+
+  /* 伤害 / 治疗飘字 */
+  .fx-float {
+    fill: var(--danger);
+    font-size: 30px;
+    font-weight: 700;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: rgba(255, 255, 255, 0.92);
+    stroke-width: 5;
+    animation: fx-float 1000ms ease-out forwards;
+  }
+
+  .fx-float--heal {
+    fill: #1f9d7a;
+  }
+
+  @keyframes fx-float {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.85);
+    }
+    25% {
+      opacity: 1;
+      transform: translateY(0) scale(1.05);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-42px) scale(1);
+    }
+  }
+
+  /* 移动轨迹 */
+  .fx-path {
+    fill: none;
+    stroke: #1f9d7a;
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-dasharray: 12 10;
+    opacity: 0.9;
+    animation: fx-fade 1000ms ease-out forwards;
+  }
+
+  @keyframes fx-fade {
+    from {
+      opacity: 0.95;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  /* 阵亡涟漪 */
+  .fx-death {
+    fill: none;
+    stroke: var(--danger);
+    stroke-width: 5;
+    animation: fx-death 900ms ease-out forwards;
+  }
+
+  @keyframes fx-death {
+    from {
+      opacity: 0.9;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 0;
+      transform: scale(2.4);
+    }
+  }
+}

@@ -39,12 +39,32 @@ export const PLAYER_COLORS: Record<PlayerId, string> = {
   P2: '#7fd1ff',
 };
 
+/**
+ * 阵营色的"深色版"，给浅底上的文字与色块用。
+ *
+ * 浅色主题里 PLAYER_COLORS（粉彩）只适合画在地图与深色牌面上；写在浅色面板上的字
+ * 必须换成这一版，否则对比度不够（浅粉压在近白底上几乎看不清）。
+ */
+export const PLAYER_INKS: Record<PlayerId, string> = {
+  P1: '#c2563a',
+  P2: '#2a6db0',
+};
+
 export const STATUS_COLORS: Record<StatusType, string> = {
   Frozen: '#8fd3ff',
   SkillSealed: '#b58cff',
   Marked: '#ff7a7a',
   Shielded: '#ffd479',
   Empowered: '#ff9f7a',
+};
+
+/** 状态色的深色版：浅底面板上的胶囊用它（地图圆点与深色牌面仍用 STATUS_COLORS）。 */
+export const STATUS_INKS: Record<StatusType, string> = {
+  Frozen: '#1f6f9e',
+  SkillSealed: '#6d4bb5',
+  Marked: '#c0392b',
+  Shielded: '#a9761a',
+  Empowered: '#c2563a',
 };
 
 export const STATUS_ORDER: readonly StatusType[] = [

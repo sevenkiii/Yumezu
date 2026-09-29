@@ -1,0 +1,478 @@
+/**
+ * 卡牌层：底部一条扇形（角色牌 + 功能牌），以及选中后就地展开的详情。
+ *
+ * 约定：
+ *  - 角色牌与功能牌共用 assets/ui/card.png 当牌面，只在牌面上叠内容；
+ *  - 牌面元素一律不要写 background 简写（会覆盖掉牌面图片），
+ *    需要压住全局按钮底色时用 base.css 里的"卡面例外"；
+ *  - 倾斜 / 抬起由外层 .fan-slot 统一处理，卡片本体不自己旋转。
+ */
+
+@layer cards {
+  /* ---------- 底部扇形 ---------- */
+
+  .table__fan {
+    position: absolute;
+    left: 50%;
+    /* 桌面只露出牌的上半部分（--fan-peek），手机上是 0（完整显示） */
+    bottom: calc(-1 * var(--fan-peek, 0px));
+    display: flex;
+    align-items: flex-end;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .fan-slot {
+    position: relative;
+    /* --tilt / --lift 由组件按下标算好，--pull 由选中 / hover 状态给 */
+    transform: translateY(calc(var(--lift, 0px) + var(--pull, 0px))) rotate(var(--tilt, 0deg));
+    transition: transform 220ms cubic-bezier(0.2, 0.8, 0.3, 1);
+    pointer-events: auto;
+  }
+
+  .fan-slot + .fan-slot {
+    margin-left: -46px;
+  }
+
+  /* 选中的牌"抽出来" */
+  .fan-slot:has(.char-card--selected),
+  .fan-slot:has(.hand-card--selected) {
+    --pull: calc(-1 * var(--fan-peek, 0px) - 6px);
+    transform: translateY(calc(var(--lift, 0px) + var(--pull))) rotate(0deg) scale(1.02);
+    /* !important：压过组件给的内联 z-index */
+    z-index: 55 !important;
+  }
+
+  /* ---------- 角色牌 ---------- */
+
+  .char-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.28));
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+
+  /* 可选中：给一圈内描边。
+     注意顺序——大牌（.char-card--full）在下面有自己的投影，会盖掉这条，
+     所以目前只有对手的小牌看得见这个环。这是既有表现，重写时保持 1:1。 */
+  .char-card--selectable {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14) inset;
+  }
+
+  .char-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    min-height: 0;
+    text-align: left;
+    flex: 1 1 auto;
+  }
+
+  .char-card__art {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .char-card__art-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .char-card__initial {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    color: var(--owner, #fff);
+    font-size: 34px;
+    font-weight: 700;
+  }
+
+  .char-card__hpbar {
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .char-card__hpbar i {
+    display: block;
+    height: 100%;
+    transition: width 200ms ease;
+  }
+
+  .char-card__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .char-card__name {
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .char-card__hp-text {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .char-card__statuses {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+
+  .char-card__status {
+    padding: 0 5px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  /* 技能圆钮：外圈是 CD 环（底色由组件用 conic-gradient 内联下发） */
+  .char-card__skill {
+    width: 38px;
+    height: 38px;
+    margin: 0 auto 6px;
+    padding: 0;
+    min-height: 0;
+    border: none;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+  }
+
+  .char-card__skill:disabled {
+    opacity: 0.5;
+  }
+
+  .char-card__skill-inner {
+    width: 32px;
+    height: 32px;
+    background: #101728;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+  }
+
+  .char-card__skill-name {
+    color: #f0e2c0;
+    font-size: 9px;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  /* ---------- 大牌（自己这边，牌面用 card.png） ---------- */
+
+  .char-card--full {
+    position: relative;
+    width: 148px;
+    height: 206px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    background: url('../../../assets/ui/card.png') center / 100% 100% no-repeat;
+    box-shadow: var(--shadow-card);
+    /* 卡片本体不自己旋转，倾斜交给 .fan-slot */
+    transform: translateY(var(--lift, 0)) rotate(var(--tilt, 0deg));
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      filter 180ms ease;
+    pointer-events: auto;
+  }
+
+  .char-card--full .char-card__body {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    /* 底部留出技能圆钮的位置，避免 HP 数字被压住 */
+    padding: 20px 18px 48px;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+  }
+
+  .char-card--full .char-card__art {
+    position: relative;
+    display: block;
+    width: 92px;
+    height: 92px;
+    margin-top: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px solid var(--owner, #fff);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .char-card--full .char-card__hpbar {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.65);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .char-card--full .char-card__meta {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .char-card--full .char-card__name {
+    color: var(--owner, #fff);
+    font-size: 15px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+  }
+
+  .char-card--full .char-card__hp-text {
+    color: #eadfc4;
+    font-size: 11px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  }
+
+  .char-card--full .char-card__statuses {
+    display: flex;
+    gap: 3px;
+  }
+
+  .char-card--full .char-card__skill {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    min-height: 0;
+    border: none;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    pointer-events: auto;
+    transition:
+      transform 160ms ease,
+      filter 160ms ease;
+  }
+
+  .char-card--full .char-card__skill:hover:not(:disabled) {
+    transform: scale(1.12);
+  }
+
+  .char-card--full .char-card__skill:disabled {
+    filter: grayscale(0.7);
+    opacity: 0.75;
+  }
+
+  /* 鼠标设备上悬停抬起（触屏设备不做，避免点完一直浮着） */
+  .char-card--full:hover:not(.char-card--dead) {
+    transform: translateY(calc(var(--lift, 0px) - 18px)) rotate(0deg) scale(1.04);
+    z-index: 30;
+    box-shadow: var(--shadow-card-lift);
+  }
+
+  /* 选中：只靠外圈描边与位置变化表达，牌面本身不变色 */
+  .char-card--selected {
+    z-index: 20;
+    box-shadow:
+      0 0 0 2px var(--owner, #fff),
+      var(--shadow-card-lift);
+    transform: translateY(calc(var(--lift, 0px) - 12px)) rotate(0deg) scale(1.02);
+  }
+
+  /* 正在瞄准 */
+  .char-card--aiming {
+    box-shadow:
+      0 0 0 3px var(--warn),
+      var(--shadow-card-lift);
+  }
+
+  .char-card--dead {
+    opacity: 0.42;
+    filter: grayscale(0.8) brightness(0.7);
+  }
+
+  .char-card--dead .char-card__name {
+    text-decoration: line-through;
+  }
+
+  /* ---------- 小牌（对手，顶栏里的一行） ---------- */
+
+  .char-card--mini {
+    width: auto;
+    background: rgba(252, 254, 255, 0.92);
+    border-radius: 10px;
+  }
+
+  .char-card--mini .char-card__body {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px 3px 3px;
+  }
+
+  .char-card--mini .char-card__art {
+    width: 32px;
+    height: 32px;
+    aspect-ratio: auto;
+    border-radius: 50%;
+    flex: 0 0 auto;
+  }
+
+  .char-card--mini .char-card__hpbar {
+    left: 3px;
+    right: 3px;
+    bottom: 3px;
+    height: 4px;
+    background: rgba(34, 48, 74, 0.16);
+  }
+
+  .char-card--mini .char-card__meta {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .char-card--mini .char-card__name {
+    font-size: 12px;
+  }
+
+  .char-card--mini .char-card__statuses {
+    flex-direction: row;
+  }
+
+  /* ---------- 功能牌（与角色牌同尺寸、同牌面） ---------- */
+
+  .hand-card {
+    position: relative;
+    width: 112px;
+    height: 156px;
+    border-radius: 10px;
+    background: url('../../../assets/ui/card.png') center / 100% 100% no-repeat;
+    box-shadow: var(--shadow-card);
+    transform: translateY(var(--lift, 0)) rotate(var(--tilt, 0deg));
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      filter 180ms ease;
+    pointer-events: auto;
+  }
+
+  .hand-card:hover {
+    transform: translateY(calc(var(--lift, 0px) - 16px)) rotate(0deg) scale(1.05);
+    z-index: 40;
+  }
+
+  .hand-card--selected {
+    z-index: 35;
+    box-shadow:
+      0 0 0 2px var(--accent),
+      var(--shadow-card-lift);
+    transform: translateY(calc(var(--lift, 0px) - 12px)) rotate(0deg) scale(1.03);
+  }
+
+  .hand-card--disabled {
+    filter: grayscale(0.75) brightness(0.75);
+  }
+
+  .hand-card__main {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 16px 12px 30px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    text-align: left;
+  }
+
+  .hand-card__seal {
+    display: grid;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+    margin-top: 8px;
+    background: radial-gradient(
+      circle at 40% 32%,
+      rgba(231, 200, 135, 0.35),
+      rgba(10, 16, 32, 0.92)
+    );
+    border: 2px solid #cbb27a;
+    border-radius: 50%;
+    color: #f2e6c8;
+    font-size: 30px;
+    font-weight: 700;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  }
+
+  .hand-card__name {
+    color: #f2e6c8;
+    font-size: 13px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  }
+
+  .hand-card__category {
+    color: #b8a986;
+    font-size: 10px;
+  }
+
+  .hand-card__description {
+    margin-top: 2px;
+    color: #ddd6c4;
+    font-size: 10px;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hand-card__discard {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 8px;
+    min-height: 22px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(231, 200, 135, 0.35);
+    border-radius: 8px;
+    color: #cfc4a6;
+    font-size: 10px;
+  }
+}

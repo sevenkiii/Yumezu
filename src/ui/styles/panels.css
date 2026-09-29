@@ -1,0 +1,252 @@
+/**
+ * 面板层：详情面板、行动记录、开发面板，以及它们共用的血条。
+ *
+ * 这些面板既能出现在右侧栏，也能作为卡牌旁的浮层（.card-detail 里再复写尺寸）。
+ */
+
+@layer panels {
+  /* ---------- 通用血条 ---------- */
+
+  .hp-bar {
+    flex: 1 1 auto;
+    height: 8px;
+    background: rgba(34, 48, 74, 0.12);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .hp-bar__fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    transition: width 160ms ease;
+  }
+
+  /* ---------- 详情面板 ---------- */
+
+  .detail {
+    padding: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .detail__title {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .detail__art {
+    width: 100%;
+    aspect-ratio: 0.9;
+    margin-bottom: 8px;
+    background: rgba(34, 48, 74, 0.06);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .detail__art-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .detail__name {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .detail__role {
+    margin: 2px 0 8px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .detail__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .detail__hp {
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .detail__statuses {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .detail__skill {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 10px 0 4px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .detail__cd {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 400;
+  }
+
+  .detail__body {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .detail__hint {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .detail__stats {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 10px;
+    margin: 10px 0 0;
+    font-size: 11px;
+  }
+
+  .detail__stats dt {
+    color: var(--muted);
+  }
+
+  .detail__stats dd {
+    margin: 0;
+    text-align: right;
+  }
+
+  /* 浅底上的状态胶囊：底色要反过来，字色由 DetailPanel 用深色一版下发 */
+  .detail__statuses .char-card__status {
+    background: rgba(34, 48, 74, 0.05);
+  }
+
+  /* ---------- 详情面板的"卡牌旁"形态 ---------- */
+
+  /* 选中一张牌时，详情就地在它旁边展开（靠右的牌翻到左边，见 responsive.css） */
+  .card-detail {
+    position: absolute;
+    left: calc(100% + 10px);
+    bottom: 0;
+    z-index: 80;
+    width: 236px;
+    animation: detail-in 200ms ease;
+  }
+
+  .card-detail .detail {
+    /* 与卡牌同高，不遮住地图中间 */
+    max-height: 206px;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(34, 48, 74, 0.25) transparent;
+    padding: 8px 10px;
+    background: var(--panel-overlay);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-float);
+  }
+
+  /* 卡面已经有大立绘了，这里不用再重复一遍 */
+  .card-detail .detail__art {
+    display: none;
+  }
+
+  .card-detail .detail__name {
+    font-size: 15px;
+  }
+
+  .card-detail .detail__body {
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .card-detail .detail__stats {
+    margin-top: 6px;
+    font-size: 10px;
+  }
+
+  @keyframes detail-in {
+    from {
+      opacity: 0;
+      transform: translateX(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* ---------- 行动记录 / 开发面板 ---------- */
+
+  .log-panel,
+  .dev-panel {
+    padding: 8px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .log-panel__title,
+  .dev-panel__title {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .log-panel__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .log-panel__item {
+    padding-bottom: 4px;
+    border-bottom: 1px dashed rgba(34, 48, 74, 0.12);
+  }
+
+  .log-line {
+    color: var(--text);
+  }
+
+  .log-line--sub {
+    padding-left: 8px;
+    color: var(--muted);
+  }
+
+  .dev-panel__row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-bottom: 5px;
+  }
+
+  .dev-panel__row button {
+    min-height: 30px;
+    padding: 4px 9px;
+    font-size: 11px;
+  }
+
+  .dev-panel__hash {
+    margin: 0;
+    color: var(--muted);
+    font-size: 10px;
+    word-break: break-all;
+  }
+}

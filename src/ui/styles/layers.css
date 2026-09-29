@@ -1,0 +1,29 @@
+/**
+ * 样式入口：只声明层顺序，然后按层汇总各部分。
+ *
+ * 为什么要分层：这套样式以前是按"开发阶段"往下追加的，优先级靠"谁写在后面谁赢"
+ * 决定，于是反复出现"改了没反应"（例如全局 button:hover 把卡面刷成一块白板）。
+ * 现在优先级只由这里声明的顺序决定，和文件顺序、书写位置都无关：
+ *
+ *   tokens < base < layout < board < cards < panels < screens < responsive
+ *
+ * 越靠后越高；同一层内部才继续比特异性与书写顺序。
+ *
+ * 这条声明与下面的导入顺序必须一致：一致时生产构建的压缩器会把它当冗余省略
+ * （顺序由各层首次出现的位置决定，结果相同）；一旦不一致，压缩器会保留它，
+ * 于是声明的顺序说了算 —— 两种情况都不会翻车。
+ *
+ * 约定：**所有规则都必须写在某个 @layer 里**。没有进层的规则优先级高于所有层，
+ * 会静默盖掉一切。
+ */
+
+@layer tokens, base, layout, board, cards, panels, screens, responsive;
+
+@import './tokens.css';
+@import './base.css';
+@import './layout.css';
+@import './board.css';
+@import './cards.css';
+@import './panels.css';
+@import './screens.css';
+@import './responsive.css';
