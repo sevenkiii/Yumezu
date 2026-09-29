@@ -16,7 +16,8 @@ import { ActionLogPanel } from '../src/ui/components/ActionLogPanel';
 import { CharacterCard } from '../src/ui/components/CharacterCard';
 import { HandView } from '../src/ui/components/HandView';
 import { MapView } from '../src/ui/components/MapView';
-import { TeamPanel } from '../src/ui/components/TeamPanel';
+import { EnemyStrip } from '../src/ui/components/EnemyStrip';
+import { HpAvatar } from '../src/ui/components/HpAvatar';
 import { getText } from '../src/ui/i18n';
 import {
   INITIAL_UI_STATE,
@@ -86,7 +87,6 @@ describe('界面渲染冒烟测试', () => {
       <CharacterCard
         text={text}
         character={character}
-        variant="full"
         selected={true}
         selectable={true}
         canUseSkill={true}
@@ -101,21 +101,37 @@ describe('界面渲染冒烟测试', () => {
     expect(html).toContain('char-card--selected');
   });
 
-  it('对手小卡能渲染', () => {
+  it('对手条渲染成一排头像（血量环在），点开才有详情', () => {
     const state = battle();
     const html = renderToStaticMarkup(
-      <TeamPanel
-        view={getViewFor(state, 'P1')}
-        text={text}
-        highlights={highlightsOf(state)}
-        selectedCharacterId={null}
-        title={text.panel.enemyTeam}
-        side="ENEMY"
-        variant="mini"
-      />,
+      <EnemyStrip view={getViewFor(state, 'P1')} text={text} title={text.panel.enemyTeam} />,
     );
     expect(html).toContain('Mikage');
-    expect(html).toContain('char-card--mini');
+    expect(html).toContain('hp-avatar');
+    expect(html).toContain('hp-avatar__value');
+    // 默认不展开：详情面板要点头像才出现
+    expect(html).not.toContain('enemy-strip__detail');
+  });
+
+  it('头像环按剩余血量的比例画弧（满血一圈、空血不画）', () => {
+    const state = battle();
+    const character = findCharacter(state, 'P2:Mikage');
+    if (character === null) throw new Error('missing');
+
+    // 半径 20 的周长 ≈ 125.66：半血 = 半圈
+    character.hp = character.maxHp / 2;
+    const half = renderToStaticMarkup(
+      <HpAvatar text={text} character={character} expanded={false} onToggle={noop} />,
+    );
+    expect(half).toMatch(/stroke-dasharray="62\.83\d* 125\.66\d*"/);
+
+    character.hp = 0;
+    character.alive = false;
+    const dead = renderToStaticMarkup(
+      <HpAvatar text={text} character={character} expanded={false} onToggle={noop} />,
+    );
+    expect(dead).toContain('hp-avatar--dead');
+    expect(dead).not.toContain('hp-avatar__value');
   });
 
   it('手牌与角色牌排在同一条扇形里', () => {

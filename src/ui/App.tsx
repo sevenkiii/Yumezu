@@ -25,7 +25,7 @@ import { HandView, fanLift, fanTilt } from './components/HandView';
 import { ActionBar } from './components/ActionBar';
 import { MapView } from './components/MapView';
 import { NewGameScreen } from './components/NewGameScreen';
-import { TeamPanel } from './components/TeamPanel';
+import { EnemyStrip } from './components/EnemyStrip';
 import { getText } from './i18n';
 import {
   INITIAL_UI_STATE,
@@ -236,15 +236,7 @@ export function App() {
           </span>
         </div>
         <div className="top-bar__enemy">
-          <TeamPanel
-            view={view}
-            text={text}
-            highlights={highlights}
-            selectedCharacterId={selectedCharacterId}
-            title={text.panel.enemyTeam}
-            side="ENEMY"
-            variant="mini"
-          />
+          <EnemyStrip view={view} text={text} title={text.panel.enemyTeam} />
         </div>
         <div className="top-bar__buttons">
           <button
@@ -305,7 +297,6 @@ export function App() {
                     <CharacterCard
                       text={text}
                       character={character}
-                      variant="full"
                       selected={selected}
                       selectable={highlights.selectableCharacters.has(character.id)}
                       canUseSkill={highlights.canUseSkill && selected}

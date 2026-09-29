@@ -1,8 +1,7 @@
 /**
  * 角色卡：以 assets/ui/card.png 为牌面，叠加立绘、名字、HP 与技能圆钮。
  *
- * variant="full" 用在自己的扇形手牌里（可选中、可用技能、可倾斜）；
- * variant="mini" 用在对手的小条上（只读，省空间）。
+ * 只用在底部扇形里（可选中、可用技能、可倾斜）；对手那一行用的是 HpAvatar。
  */
 
 import { characterDefinition } from '../../characters/Character';
@@ -15,7 +14,6 @@ import { Portrait } from './Portrait';
 export interface CharacterCardProps {
   readonly text: UiText;
   readonly character: CharacterState;
-  readonly variant: 'full' | 'mini';
   readonly selected: boolean;
   readonly selectable: boolean;
   /** 技能圆钮是否可点。 */
@@ -33,7 +31,6 @@ export interface CharacterCardProps {
 export function CharacterCard({
   text,
   character,
-  variant,
   selected,
   selectable,
   canUseSkill = false,
@@ -54,7 +51,7 @@ export function CharacterCard({
 
   const className = [
     'char-card',
-    variant === 'mini' ? 'char-card--mini' : 'char-card--full',
+    'char-card--full',
     character.alive ? '' : 'char-card--dead',
     selected ? 'char-card--selected' : '',
     selectable ? 'char-card--selectable' : '',
@@ -121,27 +118,25 @@ export function CharacterCard({
         ) : null}
       </button>
 
-      {variant === 'full' ? (
-        <button
-          type="button"
-          className="char-card__skill"
-          onClick={onSkill}
-          disabled={onSkill === undefined || !canUseSkill}
-          style={{
-            background:
-              'conic-gradient(' +
-              (character.skillCd <= 0 ? '#e7c887' : '#7fd1ff') +
-              ' ' +
-              (cdProgress * 100).toFixed(0) +
-              '%, rgba(0,0,0,0.35) 0)',
-          }}
-          title={characterText.skillName + '：' + characterText.skillDescription}
-        >
-          <span className="char-card__skill-inner">
-            <span className="char-card__skill-name">{characterText.skillName}</span>
-          </span>
-        </button>
-      ) : null}
+      <button
+        type="button"
+        className="char-card__skill"
+        onClick={onSkill}
+        disabled={onSkill === undefined || !canUseSkill}
+        style={{
+          background:
+            'conic-gradient(' +
+            (character.skillCd <= 0 ? '#e7c887' : '#7fd1ff') +
+            ' ' +
+            (cdProgress * 100).toFixed(0) +
+            '%, rgba(0,0,0,0.35) 0)',
+        }}
+        title={characterText.skillName + '：' + characterText.skillDescription}
+      >
+        <span className="char-card__skill-inner">
+          <span className="char-card__skill-name">{characterText.skillName}</span>
+        </span>
+      </button>
     </div>
   );
 }

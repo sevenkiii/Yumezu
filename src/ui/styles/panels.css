@@ -38,12 +38,29 @@
     letter-spacing: 1px;
   }
 
+  /* 名字 / 定位 / 血量与头像并排 */
+  .detail__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .detail__head-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* 小头像：够认出人就行，不要撑高面板 */
   .detail__art {
-    width: 100%;
-    aspect-ratio: 0.9;
-    margin-bottom: 8px;
+    display: block;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 auto;
     background: rgba(34, 48, 74, 0.06);
-    border-radius: 10px;
+    border-radius: 50%;
     overflow: hidden;
   }
 
@@ -60,7 +77,7 @@
   }
 
   .detail__role {
-    margin: 2px 0 8px;
+    margin: 0;
     color: var(--muted);
     font-size: 11px;
   }
@@ -187,6 +204,22 @@
       opacity: 1;
       transform: none;
     }
+  }
+
+  /* ---------- 详情面板的"头像旁边"形态（顶栏对手） ---------- */
+
+  .enemy-strip__detail {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 90;
+    width: 236px;
+    animation: detail-in 200ms ease;
+  }
+
+  .enemy-strip__detail .detail {
+    background: var(--panel-overlay);
+    box-shadow: var(--shadow-float);
   }
 
   /* ---------- 行动记录 / 开发面板 ---------- */

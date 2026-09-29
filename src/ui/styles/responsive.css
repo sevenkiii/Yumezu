@@ -53,6 +53,29 @@
       display: none;
     }
 
+    /* 头像小一档，顶栏在手机上更省地方 */
+    .hp-avatar {
+      width: 38px;
+      height: 38px;
+    }
+
+    /* 手机上没有"挂在头像下面"的余地：详情改成底部浮层（和右侧栏同一套做法） */
+    .enemy-strip__detail {
+      position: fixed;
+      top: auto;
+      left: 8px;
+      right: 8px;
+      bottom: 8px;
+      width: auto;
+      z-index: 95;
+    }
+
+    /* 和右侧栏一样留出地图：最多占 58% 屏高，超出就滚动 */
+    .enemy-strip__detail .detail {
+      max-height: 58dvh;
+      overflow: auto;
+    }
+
     /* 地图倾斜得温和一点，免得边缘被裁掉 */
     .map--focused {
       transform: perspective(680px) rotateX(16deg) scale(1.05);

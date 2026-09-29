@@ -57,30 +57,34 @@ export function DetailPanel({ view, text, characterId, handCardId }: DetailPanel
   return (
     <section className="detail">
       <h2 className="detail__title">{text.panel.detail}</h2>
-      <div className="detail__art">
-        <Portrait
-          typeId={character.typeId}
-          boxAspect={0.9}
-          framing="card"
-          className="detail__art-img"
-        />
-      </div>
-      <p className="detail__name" style={{ color: PLAYER_INKS[character.owner] }}>
-        {characterText.name}
-      </p>
-      <p className="detail__role">{characterText.role}</p>
-
-      <div className="detail__row">
-        <span className="hp-bar">
-          <span
-            className="hp-bar__fill"
-            style={{
-              width: (ratio * 100).toFixed(1) + '%',
-              background: PLAYER_INKS[character.owner],
-            }}
+      {/* 小头像 + 名字 / 定位 / 血量挤在同一行，面板才不至于被头像撑高 */}
+      <div className="detail__head">
+        <span className="detail__art">
+          <Portrait
+            typeId={character.typeId}
+            boxAspect={1}
+            framing="token"
+            className="detail__art-img"
           />
         </span>
-        <span className="detail__hp">{text.format.hp(character.hp, character.maxHp)}</span>
+        <div className="detail__head-main">
+          <p className="detail__name" style={{ color: PLAYER_INKS[character.owner] }}>
+            {characterText.name}
+          </p>
+          <p className="detail__role">{characterText.role}</p>
+          <div className="detail__row">
+            <span className="hp-bar">
+              <span
+                className="hp-bar__fill"
+                style={{
+                  width: (ratio * 100).toFixed(1) + '%',
+                  background: PLAYER_INKS[character.owner],
+                }}
+              />
+            </span>
+            <span className="detail__hp">{text.format.hp(character.hp, character.maxHp)}</span>
+          </div>
+        </div>
       </div>
 
       {statuses.length > 0 ? (
