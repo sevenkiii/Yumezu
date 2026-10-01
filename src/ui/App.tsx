@@ -26,7 +26,10 @@ import { ActionBar } from './components/ActionBar';
 import { MapView } from './components/MapView';
 import { NewGameScreen } from './components/NewGameScreen';
 import { EnemyStrip } from './components/EnemyStrip';
+import { ResultOverlay } from './components/ResultOverlay';
+import { ReplayPanel } from './components/ReplayPanel';
 import { getText } from './i18n';
+import { playerLabel } from './formatEvent';
 import {
   INITIAL_UI_STATE,
   armSkill,
@@ -46,10 +49,15 @@ import { createLocalTransport } from './transport';
 import { useGameSnapshot } from './useGame';
 import { MOTION_WINDOW_MS } from './motionTiming';
 
+/** 回放时喂给界面的空行动列表（常量，避免每次渲染换引用）。 */
+const NO_ACTIONS: readonly Action[] = [];
+
 export function App() {
   const text = useMemo(() => getText(), []);
 
   // 开发辅助：用 URL 参数直接进入对局（无头截图与手动调试用）
+  // ?autostart=1  直接开局    ?select=N  自动选中第 N 名己方角色
+  // ?mapSeed= / ?gameSeed= 指定种子    ?maxTurns=N  设回合上限（用来快速看结算）
   const urlParams = useMemo(
     () =>
       typeof location === 'undefined'
@@ -61,6 +69,8 @@ export function App() {
     createLocalTransport({
       mapSeed: urlParams.get('mapSeed') ?? 'dream-1',
       gameSeed: urlParams.get('gameSeed') ?? 'game-1',
+      maxTurns:
+        urlParams.get('maxTurns') === null ? null : Number(urlParams.get('maxTurns') as string),
     }),
   );
   const snapshot = useGameSnapshot(transport);
@@ -69,6 +79,8 @@ export function App() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [devOpen, setDevOpen] = useState(false);
   const [bannerKey, setBannerKey] = useState(0);
+  /** 结算幕布是否已经点掉（收起来后还能看棋盘）。 */
+  const [resultDismissed, setResultDismissed] = useState(false);
   /** 最近一次行动的事件，用于播"伤害飘字 / 移动轨迹"等表现，动画放完再清空。 */
   const [fxEvents, setFxEvents] = useState<readonly GameEvent[]>([]);
   /** ?select= 只生效一次，避免"清空选中后又被自动选回来"。 */
@@ -76,7 +88,9 @@ export function App() {
   /** 上一次渲染用的状态哈希：只有真正"行动过后"才清空 UI 选中态。 */
   const lastHashRef = useRef(snapshot.stateHash);
 
-  const legal = snapshot.legalActions;
+  const replaying = snapshot.replay !== null;
+  /** 回放时把合法行动清空：棋盘、卡牌、按钮全部不可操作，只能看。 */
+  const legal = replaying ? NO_ACTIONS : snapshot.legalActions;
   const view = snapshot.view;
   /** 角色当前位置：用来把"原地移动"（规则允许）从可点落点里剔掉，见 interaction.ts。 */
   const characterPositions = useMemo(
@@ -110,6 +124,11 @@ export function App() {
     if (!started) return;
     setBannerKey((key) => key + 1);
   }, [started, view.turnIndex, view.currentPlayer]);
+
+  // 分出胜负时把幕布重新翻出来；读完点掉就不再挡着棋盘
+  useEffect(() => {
+    if (snapshot.finished) setResultDismissed(false);
+  }, [snapshot.finished]);
 
   // 取消选中：按 Esc，或点击地图空白处
   useEffect(() => {
@@ -235,6 +254,7 @@ export function App() {
           <span className={yourTurn ? 'chip chip--ready' : 'chip'}>
             {yourTurn ? text.player.currentTurn : text.player.waiting}
           </span>
+          {replaying ? <span className="chip chip--replay">{text.panel.replaying}</span> : null}
         </div>
         <div className="top-bar__enemy">
           <EnemyStrip view={view} text={text} title={text.panel.enemyTeam} />
@@ -401,6 +421,15 @@ export function App() {
               <p className="dev-panel__hash">
                 {text.dev.stateHash}: {snapshot.stateHash}
               </p>
+              <ReplayPanel
+                text={text}
+                record={snapshot.record}
+                replay={snapshot.replay}
+                onLoad={(record) => transport.loadRecord(record)}
+                onStop={() => transport.stopReplay()}
+                onStep={() => transport.replayStep()}
+                onBack={() => transport.replayBack()}
+              />
             </section>
           ) : null}
           <ActionLogPanel view={view} text={text} />
@@ -413,10 +442,14 @@ export function App() {
             {view.result === null
               ? ''
               : view.result.kind === 'WIN'
-                ? text.format.win(view.result.winner)
+                ? text.format.win(playerLabel(view.result.winner, text))
                 : text.format.draw}
           </div>
         </footer>
+      ) : null}
+
+      {snapshot.finished && !resultDismissed ? (
+        <ResultOverlay view={view} text={text} onDismiss={() => setResultDismissed(true)} />
       ) : null}
     </div>
   );

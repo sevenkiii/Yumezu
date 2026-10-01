@@ -282,4 +282,66 @@
     font-size: 10px;
     word-break: break-all;
   }
+
+  /* ---------- 对局记录 / 回放（挂在开发面板下面） ---------- */
+
+  .replay-panel {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(34, 48, 74, 0.16);
+  }
+
+  .replay-panel__title {
+    margin: 0 0 4px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .replay-panel__hint {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .replay-panel__row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-bottom: 5px;
+  }
+
+  .replay-panel__row button {
+    min-height: 30px;
+    padding: 4px 9px;
+    font-size: 11px;
+  }
+
+  .replay-panel__progress {
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .replay-panel__text {
+    width: 100%;
+    min-height: 64px;
+    max-height: 120px;
+    padding: 6px 8px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    font-size: 10px;
+    line-height: 1.4;
+    resize: vertical;
+  }
+
+  .replay-panel__notice {
+    margin: 4px 0 0;
+    color: var(--accent);
+    font-size: 10px;
+  }
 }

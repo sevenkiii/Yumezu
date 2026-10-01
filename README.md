@@ -17,6 +17,7 @@
   （技能是选中后浮在卡牌上方的那颗圆钮；悔棋在顶栏；Esc / 点空白取消选中）。
   另有地图缩放拖拽、选中自动取景与倾斜、角色沿边逐跳移动、攻击撞击、伤害飘字与回合幕布。
 - Phase 5：批量对局统计工具已可用（`npm run simulate`）；完整的平衡结论要等更聪明的 AI（Phase 6）。
+- 工具：`npm run stats` 生成数值总表 `STATS.md`；开发面板里可以**复制对局记录**给别人精确重放这一局。
 
 ## 文档
 
@@ -24,6 +25,7 @@
 | -------------------------- | ------------------------------------- |
 | [`RULES.md`](./RULES.md)   | **V1 规则书 —— 实现与测试的唯一依据** |
 | [`AGENTS.md`](./AGENTS.md) | 协作与工程约定（常用命令、架构约束）  |
+| [`STATS.md`](./STATS.md)   | **数值总表**（`npm run stats` 从定义生成，调平衡看这张） |
 | `src/*/README.md`          | 各模块的职责与文件说明                |
 
 ## 技术栈
@@ -43,6 +45,7 @@ npm run test
 npm run dev     # 启动网页界面（Phase 4.1：可以直接玩一局）
 npm run demo    # 跑完一整局 3v3，输出阵容、胜者与行动统计
 npm run simulate -- --games 200 --seed base   # Phase 5 统计：胜率 / 长度 / 角色与卡牌使用率
+npm run stats   # 重新生成数值总表 STATS.md
 ```
 
 > `npm run dev` 打开网页界面；`npm run test` 跑核心引擎与界面的测试。

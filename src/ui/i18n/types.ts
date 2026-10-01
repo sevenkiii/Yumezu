@@ -73,6 +73,13 @@ export interface UiText {
     readonly onCooldown: string;
     readonly ready: string;
     readonly empty: string;
+    readonly replaying: string;
+  };
+  /** 结算幕布。 */
+  readonly result: {
+    readonly victory: string;
+    readonly defeat: string;
+    readonly dismiss: string;
   };
   readonly stat: {
     readonly attackDamage: string;
@@ -104,6 +111,22 @@ export interface UiText {
     readonly viewer: string;
     readonly followTurn: string;
     readonly stateHash: string;
+    readonly replay: {
+      readonly title: string;
+      readonly hint: string;
+      readonly placeholder: string;
+      readonly copy: string;
+      readonly copied: string;
+      readonly copyFailed: string;
+      readonly load: string;
+      readonly loadFailed: string;
+      readonly stop: string;
+      readonly prev: string;
+      readonly next: string;
+      readonly play: string;
+      readonly pause: string;
+      readonly progress: (step: number, total: number) => string;
+    };
   };
   readonly format: {
     readonly turn: (index: number) => string;
@@ -136,6 +159,17 @@ export interface UiText {
     readonly gameEnd: (result: string) => string;
     readonly pass: (player: string) => string;
     readonly deploy: (player: string) => string;
+    /**
+     * 技能只用一行说明"谁用了哪个技能"：引擎事件只记录结果（伤害/治疗/状态），
+     * 不会写技能名，所以这一行必须由界面补。
+     */
+    readonly usedSkill: (who: string, name: string) => string;
+    /**
+     * 兜底文案：这一手没有产生任何事件（例如原地移动、攻击被减到 0 伤害）。
+     * 没有它的话，这种回合在行动记录里只会剩下一句"对手抽了 1 张牌"。
+     */
+    readonly actedMove: (who: string) => string;
+    readonly actedAttack: (who: string) => string;
   };
   readonly character: Record<CharacterTypeId, CharacterText>;
   readonly skillName: Record<SkillId, string>;

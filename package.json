@@ -19,7 +19,8 @@
     "test": "vitest run",
     "demo": "vitest run test/demo.test.ts",
     "simulate": "node tools/run-ts.mjs test/simulate.ts",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "stats": "node tools/run-ts.mjs tools/stats-table.ts"
   },
   "dependencies": {
     "delaunator": "^5.1.0",

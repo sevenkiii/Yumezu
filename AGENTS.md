@@ -22,6 +22,7 @@ npm run dev            # 启动网页界面
 npm run demo           # 跑完一整局 3v3
 npm run build          # 类型检查 + 生产构建
 npm run simulate -- --games 200 --seed base   # Phase 5 统计工具
+npm run stats          # 重新生成数值总表 STATS.md（从定义生成，别手改那张表）
 ```
 
 CI 依次执行 lint → format:check → typecheck → test。改动后请本地跑通。
@@ -49,6 +50,7 @@ CI 依次执行 lint → format:check → typecheck → test。改动后请本�
 - **UI 文案一律走 `src/ui/i18n`**，组件里不要出现玩家可见的字面量；引擎侧只保留 id。
 - 角色立绘放 `assets/characters/`，地图用的缩略图由 `node tools/make-thumbnails.mjs` 生成；
   取景参数在 `src/ui/portraits.ts`（focusX / focusY / heightRatio），缺失素材要能回退成字母圆形。
+- 数值改动后跑一次 `npm run stats`，让 `STATS.md` 与定义保持一致；调平衡看这张表最快。
 - 样式在 `src/ui/styles/`：优先级由 `@layer` 声明（顺序见 `layers.css`），**规则必须写在层里**、
   **同一个选择器全文件只出现一次**；牌面元素不要用 `background` 简写（会盖掉 `card.png`）。
 
@@ -67,7 +69,15 @@ CI 依次执行 lint → format:check → typecheck → test。改动后请本�
 
 **Phase 5 已完成**：`npm run simulate` 的批量统计工具（决策器目前是随机的，见 `test/support/`）。
 
-样式集中在 `src/ui/styles/`，按 `@layer` 分层（顺序在 `layers.css`）。当前 **14 个测试文件 / 125 个测试通过**。
+**工具与文档**：
 
-下一步：Phase 6（更强的 AI，用来跑有意义的平衡统计），或 4.4 剩下的结果预览 / 音效。
-`src/ai` 与 `src/server` 仍是空目录（只有 README）。
+- `npm run stats` 从定义生成 **`STATS.md`（数值总表）**，调平衡看这张；改完数值记得重跑。
+- **对局记录 / 回放**：开发面板里可以复制"种子 + 行动序列"的 JSON，别人粘回去能精确重放
+  （见 `src/ui/README.md` 与 `src/ui/replay.ts`）。
+- 结算幕布：分出胜负时盖屏，点一下收起（`ResultOverlay`）。
+
+样式集中在 `src/ui/styles/`，按 `@layer` 分层（顺序在 `layers.css`）。
+当前 **17 个测试文件 / 142 个测试通过**。
+
+下一步：Phase 7 联机（`src/server` 目前只有 README）；`src/ai` 仍是空目录，
+AI 按"够用的对手 + 抓 bug 的 fuzzer"来做即可（平衡数据主要靠真人测试 + 对局记录）。

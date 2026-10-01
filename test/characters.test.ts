@@ -127,6 +127,54 @@ describe('Melty「Melty Land」', () => {
     expect(hp(next, 'P2:Lily')).toBe(10);
     expect(hp(next, 'P1:Melty')).toBe(10);
   });
+
+  it('范围内只有 1 个敌人时也能放，并照样造成 2 点伤害', () => {
+    const state = createBattleState({
+      p1: ['Melty', 'Nana'],
+      p2: ['Mikage'],
+      positions: { 'P1:Melty': 0, 'P1:Nana': 20, 'P2:Mikage': 1 },
+      currentPlayer: 'P1',
+    });
+    const actions = skillActions(state, 'P1:Melty');
+    expect(actions).toHaveLength(1);
+    const next = useSkill(state, actions[0] as Action);
+    expect(hp(next, 'P2:Mikage')).toBe(10); // 12 - 2
+    expect(hp(next, 'P1:Melty')).toBe(10);
+  });
+
+  it('范围内只有 1 个满血友军时技能仍然合法，但不会产生任何事件', () => {
+    const state = createBattleState({
+      p1: ['Melty', 'Nana'],
+      p2: ['Mikage'],
+      positions: { 'P1:Melty': 0, 'P1:Nana': 1, 'P2:Mikage': 20 },
+      currentPlayer: 'P1',
+    });
+    const actions = skillActions(state, 'P1:Melty');
+    expect(actions).toHaveLength(1);
+    const result = applyAction(state, actions[0] as Action);
+    expect(hp(result.state, 'P1:Nana')).toBe(10); // 已经是满血
+    // 技能本身没有产生任何"结果"事件（只有回合交接那几条兜底事件），
+    // 所以界面必须自己写一行"谁用了哪个技能"（见 formatEvent）
+    expect(
+      result.events.filter(
+        (event) =>
+          event.type === 'DAMAGED' ||
+          event.type === 'HEALED' ||
+          event.type === 'STATUS_ADDED' ||
+          event.type === 'STATUS_REMOVED',
+      ),
+    ).toEqual([]);
+  });
+
+  it('范围内没有其他角色时不可用（RULES.md §11.3 的非法条件）', () => {
+    const state = createBattleState({
+      p1: ['Melty', 'Nana'],
+      p2: ['Mikage'],
+      positions: { 'P1:Melty': 0, 'P1:Nana': 20, 'P2:Mikage': 25 },
+      currentPlayer: 'P1',
+    });
+    expect(skillActions(state, 'P1:Melty')).toEqual([]);
+  });
 });
 
 describe('Mikage「影返」', () => {

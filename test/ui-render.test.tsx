@@ -18,6 +18,7 @@ import { HandView } from '../src/ui/components/HandView';
 import { MapView } from '../src/ui/components/MapView';
 import { EnemyStrip } from '../src/ui/components/EnemyStrip';
 import { HpAvatar } from '../src/ui/components/HpAvatar';
+import { ResultOverlay } from '../src/ui/components/ResultOverlay';
 import { getText } from '../src/ui/i18n';
 import {
   INITIAL_UI_STATE,
@@ -132,6 +133,23 @@ describe('界面渲染冒烟测试', () => {
     );
     expect(dead).toContain('hp-avatar--dead');
     expect(dead).not.toContain('hp-avatar__value');
+  });
+
+  it('结算幕布按视角显示胜利 / 败北', () => {
+    const state = battle();
+    state.phase = 'FINISHED';
+    state.result = { kind: 'WIN', winner: 'P2', reason: 'ANNIHILATION' };
+
+    const asWinner = renderToStaticMarkup(
+      <ResultOverlay view={getViewFor(state, 'P2')} text={text} onDismiss={noop} />,
+    );
+    expect(asWinner).toContain(text.result.victory);
+    expect(asWinner).toContain(text.result.dismiss);
+
+    const asLoser = renderToStaticMarkup(
+      <ResultOverlay view={getViewFor(state, 'P1')} text={text} onDismiss={noop} />,
+    );
+    expect(asLoser).toContain(text.result.defeat);
   });
 
   it('手牌与角色牌排在同一条扇形里', () => {

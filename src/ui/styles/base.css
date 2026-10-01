@@ -117,4 +117,12 @@
     border-color: transparent;
     font-weight: 600;
   }
+
+  /* 回放中：提醒棋盘此刻不可操作 */
+  .chip--replay {
+    color: #ffffff;
+    background: var(--warn);
+    border-color: transparent;
+    font-weight: 600;
+  }
 }

@@ -89,9 +89,39 @@ export function describeTurn(
   const action = turn.action;
   if (action.type === 'PASS') lines.push(t.format.pass(playerLabel(action.player, t)));
   if (action.type === 'DEPLOY') lines.push(t.format.deploy(playerLabel(action.player, t)));
+  // 技能没有对应事件（事件只记录结果），所以"谁用了哪个技能"必须自己写一行
+  if (action.type === 'USE_SKILL') {
+    const character = view.characters.find((item) => item.id === action.characterId);
+    if (character !== undefined) {
+      lines.push(
+        t.format.usedSkill(
+          characterLabel(view, action.characterId, t),
+          t.character[character.typeId].skillName,
+        ),
+      );
+    }
+  }
   for (const event of turn.events) {
     const line = describeEvent(view, event, t);
     if (line !== null) lines.push(line);
   }
+  // 这一手什么事件都没产生（原地移动、伤害被减到 0…）时兜一行，
+  // 否则整条记录只剩下一句"对手抽了 1 张牌"，看起来像"点了没反应"。
+  if (lines.length === 0) {
+    const fallback = describeAction(view, action, t);
+    if (fallback !== null) lines.push(fallback);
+  }
   return lines;
+}
+
+/** 行动的兜底描述：只在"这一手没有任何可展示内容"时用。 */
+function describeAction(view: PlayerView, action: Action, t: UiText): string | null {
+  switch (action.type) {
+    case 'MOVE':
+      return t.format.actedMove(characterLabel(view, action.characterId, t));
+    case 'ATTACK':
+      return t.format.actedAttack(characterLabel(view, action.characterId, t));
+    default:
+      return null;
+  }
 }

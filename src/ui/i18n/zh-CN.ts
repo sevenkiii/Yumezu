@@ -57,6 +57,7 @@ export const zhCN: UiText = {
     onCooldown: '冷却中',
     ready: '可用',
     empty: '（空）',
+    replaying: '回放中',
   },
 
   stat: {
@@ -64,6 +65,12 @@ export const zhCN: UiText = {
     moveRange: '移动范围',
     attackRange: '攻击范围',
     skillCd: '技能冷却',
+  },
+
+  result: {
+    victory: '胜利',
+    defeat: '败北',
+    dismiss: '点击任意处查看棋盘',
   },
 
   deploy: {
@@ -92,6 +99,22 @@ export const zhCN: UiText = {
     viewer: '视角',
     followTurn: '跟随当前行动方',
     stateHash: '状态哈希',
+    replay: {
+      title: '对局记录 / 回放',
+      hint: '复制这段记录发给协作者，对方能精确重放这一局；也可以把别人给的记录粘进来载入。',
+      placeholder: '把记录粘在这里，然后点「载入回放」',
+      copy: '复制记录',
+      copied: '已复制到剪贴板',
+      copyFailed: '复制失败，记录已放进下面的框里，手动复制一下',
+      load: '载入回放',
+      loadFailed: '这段记录读不出来',
+      stop: '结束回放',
+      prev: '上一步',
+      next: '下一步',
+      play: '播放',
+      pause: '暂停',
+      progress: (step, total) => '第 ' + step + ' / ' + total + ' 步',
+    },
   },
 
   format: {
@@ -125,6 +148,9 @@ export const zhCN: UiText = {
     gameEnd: (result) => '对局结束：' + result,
     pass: (player) => player + ' 放弃行动',
     deploy: (player) => player + ' 完成部署',
+    actedMove: (who) => who + ' 移动（留在原地）',
+    actedAttack: (who) => who + ' 发起攻击，但没有造成伤害',
+    usedSkill: (who, name) => who + ' 使用技能「' + name + '」',
   },
 
   character: {
