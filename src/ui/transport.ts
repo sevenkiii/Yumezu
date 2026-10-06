@@ -17,7 +17,7 @@ import type { GameState, PlayerId } from '../core/GameState';
 import type { GameEvent } from '../core/Event';
 import { getViewFor, type PlayerView } from '../core/View';
 import { hashState } from '../core/hash';
-import { parseRecord, serializeRecord, type GameRecord } from './replay';
+import { parseRecord, serializeRecord, type GameRecord } from '../core/Record';
 
 /** 回放进度：当前第几步 / 总共几步。 */
 export interface ReplayStatus {

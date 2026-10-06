@@ -81,6 +81,25 @@ export interface UiText {
     readonly defeat: string;
     readonly dismiss: string;
   };
+  /** 联机对局（房间、等待、连接状态）。 */
+  readonly online: {
+    readonly title: string;
+    readonly roomLabel: string;
+    readonly roomPlaceholder: string;
+    readonly join: string;
+    readonly hint: string;
+    readonly connecting: string;
+    readonly waiting: string;
+    readonly closed: string;
+    readonly roomFull: string;
+    readonly back: string;
+    readonly invite: string;
+    readonly copyLink: string;
+    readonly copied: string;
+    readonly opponentOnline: string;
+    readonly opponentOffline: string;
+    readonly you: string;
+  };
   readonly stat: {
     readonly attackDamage: string;
     readonly moveRange: string;

@@ -28,7 +28,9 @@ import { NewGameScreen } from './components/NewGameScreen';
 import { EnemyStrip } from './components/EnemyStrip';
 import { ResultOverlay } from './components/ResultOverlay';
 import { ReplayPanel } from './components/ReplayPanel';
+import { OnlineRoom } from './components/OnlineRoom';
 import { getText } from './i18n';
+import type { UiText } from './i18n';
 import { playerLabel } from './formatEvent';
 import {
   INITIAL_UI_STATE,
@@ -45,16 +47,29 @@ import {
   type UiHighlights,
   type UiState,
 } from './interaction';
-import { createLocalTransport } from './transport';
+import { createLocalTransport, type GameTransport } from './transport';
+import { connectRemote, defaultServerUrl, type RemoteStatus } from './transport-remote';
 import { useGameSnapshot } from './useGame';
 import { MOTION_WINDOW_MS } from './motionTiming';
 
 /** 回放时喂给界面的空行动列表（常量，避免每次渲染换引用）。 */
 const NO_ACTIONS: readonly Action[] = [];
 
-export function App() {
-  const text = useMemo(() => getText(), []);
+/**
+ * 对局界面：只依赖一个 `GameTransport`——本地对局和联机对局用的是同一套组件。
+ * 联机时额外拿到一点点"连接状态"，用来在顶栏提示与关掉回放载入。
+ */
+export interface GameScreenProps {
+  readonly transport: GameTransport;
+  readonly text: UiText;
+  readonly remote?: {
+    readonly status: RemoteStatus;
+    readonly opponentOnline: boolean;
+    readonly seat: PlayerId | null;
+  };
+}
 
+export function GameScreen({ transport, text, remote }: GameScreenProps) {
   // 开发辅助：用 URL 参数直接进入对局（无头截图与手动调试用）
   // ?autostart=1  直接开局    ?select=N  自动选中第 N 名己方角色
   // ?mapSeed= / ?gameSeed= 指定种子    ?maxTurns=N  设回合上限（用来快速看结算）
@@ -65,17 +80,8 @@ export function App() {
         : new URLSearchParams(location.search),
     [],
   );
-  const [transport] = useState(() =>
-    createLocalTransport({
-      mapSeed: urlParams.get('mapSeed') ?? 'dream-1',
-      gameSeed: urlParams.get('gameSeed') ?? 'game-1',
-      maxTurns:
-        urlParams.get('maxTurns') === null ? null : Number(urlParams.get('maxTurns') as string),
-    }),
-  );
   const snapshot = useGameSnapshot(transport);
   const [ui, setUi] = useState<UiState>(INITIAL_UI_STATE);
-  const [started, setStarted] = useState(() => urlParams.get('autostart') === '1');
   const [panelOpen, setPanelOpen] = useState(false);
   const [devOpen, setDevOpen] = useState(false);
   const [bannerKey, setBannerKey] = useState(0);
@@ -121,9 +127,8 @@ export function App() {
   }, [snapshot.eventSeq, snapshot.lastEvents]);
 
   useEffect(() => {
-    if (!started) return;
     setBannerKey((key) => key + 1);
-  }, [started, view.turnIndex, view.currentPlayer]);
+  }, [view.turnIndex, view.currentPlayer]);
 
   // 分出胜负时把幕布重新翻出来；读完点掉就不再挡着棋盘
   useEffect(() => {
@@ -132,13 +137,12 @@ export function App() {
 
   // 取消选中：按 Esc，或点击地图空白处
   useEffect(() => {
-    if (!started) return;
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') setUi(INITIAL_UI_STATE);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [started]);
+  }, []);
 
   const update = (fn: (current: UiState, current_: UiHighlights) => UiState): void => {
     setUi((previous) => fn(previous, computeHighlights(legal, previous, characterPositions)));
@@ -165,7 +169,7 @@ export function App() {
 
   // ?select=0：自动选中第 N 名己方角色（截图 / 调试用）
   useEffect(() => {
-    if (!started || selectApplied.current) return;
+    if (selectApplied.current) return;
     const selectParam = urlParams.get('select');
     if (selectParam === null) return;
     if (ui.selectedCharacterId !== null) return;
@@ -181,7 +185,7 @@ export function App() {
         target.id,
       ),
     );
-  }, [started, urlParams, view, ui.selectedCharacterId, legal]);
+  }, [urlParams, view, ui.selectedCharacterId, legal, characterPositions]);
 
   /* ---------- 点击：第一次瞄准，第二次执行 ---------- */
 
@@ -214,21 +218,6 @@ export function App() {
     act((current) => selectDiscard(current, handCardId));
   };
 
-  if (!started) {
-    return (
-      <div className="app app--start">
-        <NewGameScreen
-          text={text}
-          onStart={(mapSeed, gameSeed) => {
-            transport.startNewGame({ mapSeed, gameSeed });
-            setUi(INITIAL_UI_STATE);
-            setStarted(true);
-          }}
-        />
-      </div>
-    );
-  }
-
   const own = view.characters.filter((character) => character.owner === view.viewer);
   const fanTotal = own.length + view.hand.length;
   /** 有选中的角色 / 正在瞄准的牌时才算"聚焦状态"（决定地图是否倾斜 + 自动取景）。 */
@@ -255,6 +244,17 @@ export function App() {
             {yourTurn ? text.player.currentTurn : text.player.waiting}
           </span>
           {replaying ? <span className="chip chip--replay">{text.panel.replaying}</span> : null}
+          {remote === undefined ? null : (
+            <>
+              <span className="chip">{text.online.title}</span>
+              <span className={remote.opponentOnline ? 'chip chip--ready' : 'chip'}>
+                {remote.opponentOnline ? text.online.opponentOnline : text.online.opponentOffline}
+              </span>
+              {remote.status === 'closed' ? (
+                <span className="chip chip--replay">{text.online.closed}</span>
+              ) : null}
+            </>
+          )}
         </div>
         <div className="top-bar__enemy">
           <EnemyStrip view={view} text={text} title={text.panel.enemyTeam} />
@@ -425,6 +425,7 @@ export function App() {
                 text={text}
                 record={snapshot.record}
                 replay={snapshot.replay}
+                readOnly={remote !== undefined}
                 onLoad={(record) => transport.loadRecord(record)}
                 onStop={() => transport.stopReplay()}
                 onStep={() => transport.replayStep()}
@@ -453,4 +454,123 @@ export function App() {
       ) : null}
     </div>
   );
+}
+
+/**
+ * 应用外壳：决定这一局是"本地开一局"还是"进联机房间"。
+ * 两种模式下面是同一套对局界面（`GameScreen`）。
+ */
+export function App() {
+  const text = useMemo(() => getText(), []);
+  const urlParams = useMemo(
+    () =>
+      typeof location === 'undefined'
+        ? new URLSearchParams()
+        : new URLSearchParams(location.search),
+    [],
+  );
+  const [roomId, setRoomId] = useState<string | null>(() => urlParams.get('room'));
+  const serverUrl = useMemo(() => urlParams.get('server') ?? defaultServerUrl(), [urlParams]);
+
+  if (roomId !== null) {
+    return (
+      <RemoteSession
+        text={text}
+        roomId={roomId}
+        serverUrl={serverUrl}
+        onLeave={() => setRoomId(null)}
+      />
+    );
+  }
+  return <LocalSession text={text} urlParams={urlParams} onJoinRoom={setRoomId} />;
+}
+
+/** 本地对局：先开局界面，点了开始才是对局界面。 */
+function LocalSession({
+  text,
+  urlParams,
+  onJoinRoom,
+}: {
+  readonly text: UiText;
+  readonly urlParams: URLSearchParams;
+  readonly onJoinRoom: (roomId: string) => void;
+}) {
+  const [transport] = useState(() =>
+    createLocalTransport({
+      mapSeed: urlParams.get('mapSeed') ?? 'dream-1',
+      gameSeed: urlParams.get('gameSeed') ?? 'game-1',
+      maxTurns:
+        urlParams.get('maxTurns') === null ? null : Number(urlParams.get('maxTurns') as string),
+    }),
+  );
+  const [started, setStarted] = useState(() => urlParams.get('autostart') === '1');
+
+  if (!started) {
+    return (
+      <div className="app app--start">
+        <NewGameScreen
+          text={text}
+          onStart={(mapSeed, gameSeed) => {
+            transport.startNewGame({ mapSeed, gameSeed });
+            setStarted(true);
+          }}
+          onJoin={onJoinRoom}
+        />
+      </div>
+    );
+  }
+  return <GameScreen transport={transport} text={text} />;
+}
+
+/** 联机对局：连上、等对手、然后交给同一套对局界面。 */
+function RemoteSession({
+  text,
+  roomId,
+  serverUrl,
+  onLeave,
+}: {
+  readonly text: UiText;
+  readonly roomId: string;
+  readonly serverUrl: string;
+  readonly onLeave: () => void;
+}) {
+  const [transport, setTransport] = useState<GameTransport | null>(null);
+  const [status, setStatus] = useState<RemoteStatus>('connecting');
+  const [opponentOnline, setOpponentOnline] = useState(false);
+  const [seat, setSeat] = useState<PlayerId | null>(null);
+
+  useEffect(() => {
+    // 连接由这个 effect 自己拥有：StrictMode 重跑时旧的会被干净地关掉，不会串味
+    const join = connectRemote({ url: serverUrl, roomId });
+    let alive = true;
+    const sync = (): void => {
+      if (!alive) return;
+      setStatus(join.status);
+      setOpponentOnline(join.opponentOnline);
+      setSeat(join.seat);
+    };
+    const unsubscribe = join.subscribe(sync);
+    sync();
+    void join.ready.then((readyTransport) => {
+      if (alive) setTransport(readyTransport);
+    });
+    return () => {
+      alive = false;
+      unsubscribe();
+      join.close();
+    };
+  }, [serverUrl, roomId]);
+
+  if (transport === null) {
+    return (
+      <OnlineRoom
+        text={text}
+        roomId={roomId}
+        serverUrl={serverUrl}
+        status={status}
+        onLeave={onLeave}
+      />
+    );
+  }
+  return <GameScreen transport={transport} text={text} remote={{ status, opponentOnline, seat }} />;
 }

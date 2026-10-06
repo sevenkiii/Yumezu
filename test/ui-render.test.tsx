@@ -10,7 +10,7 @@ import { createGame, getLegalActions } from '../src/core/GameEngine';
 import { findCharacter } from '../src/core/GameState';
 import { getViewFor } from '../src/core/View';
 import { PHASE1_MAP, PHASE1_SPAWN_CENTERS } from '../src/map/fixtures';
-import { App } from '../src/ui/App';
+import { App, GameScreen } from '../src/ui/App';
 import { ActionBar } from '../src/ui/components/ActionBar';
 import { ActionLogPanel } from '../src/ui/components/ActionLogPanel';
 import { CharacterCard } from '../src/ui/components/CharacterCard';
@@ -27,6 +27,7 @@ import {
   computeHighlights,
   selectCard,
 } from '../src/ui/interaction';
+import { createLocalTransport } from '../src/ui/transport';
 import { createBattleState } from './support/fixtures';
 
 const text = getText();
@@ -58,6 +59,14 @@ describe('界面渲染冒烟测试', () => {
     const html = renderToStaticMarkup(<App />);
     expect(html).toContain(text.app.title);
     expect(html).toContain(text.newGame.start);
+  });
+
+  it('对局界面能渲染（本地 transport 直接喂给 GameScreen）', () => {
+    const transport = createLocalTransport({ mapSeed: 'render-map', gameSeed: 'render-game' });
+    const html = renderToStaticMarkup(<GameScreen transport={transport} text={text} />);
+    expect(html).toContain('class="map');
+    expect(html).toContain('char-card--full');
+    expect(html).toContain('enemy-strip');
   });
 
   it('地图渲染节点、立绘与高亮', () => {

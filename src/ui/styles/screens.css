@@ -62,6 +62,58 @@
     justify-content: flex-end;
   }
 
+  /* ---------- 开局界面里的联机入口 ---------- */
+
+  .new-game__online {
+    margin-top: 2px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(34, 48, 74, 0.16);
+  }
+
+  .new-game__section {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  /* ---------- 联机房间：等对手时显示房间号与邀请链接 ---------- */
+
+  .online-room__room {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .online-room__label {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .online-room__code {
+    color: var(--accent);
+    font-size: 28px;
+    letter-spacing: 6px;
+  }
+
+  .online-room__link {
+    display: grid;
+    gap: 4px;
+  }
+
+  .online-room__url {
+    padding: 6px 8px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-soft);
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    font-size: 11px;
+    word-break: break-all;
+  }
+
   /* ---------- 结算横幅 ---------- */
 
   .result-banner {

@@ -20,18 +20,21 @@
     "demo": "vitest run test/demo.test.ts",
     "simulate": "node tools/run-ts.mjs test/simulate.ts",
     "test:watch": "vitest",
-    "stats": "node tools/run-ts.mjs tools/stats-table.ts"
+    "stats": "node tools/run-ts.mjs tools/stats-table.ts",
+    "server": "node tools/run-ts.mjs src/server/main.ts"
   },
   "dependencies": {
     "delaunator": "^5.1.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",

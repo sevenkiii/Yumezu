@@ -5,6 +5,16 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // 开发时把联机的 WebSocket 代理到 `npm run server`（默认 8787），
+    // 这样页面永远连"自己这个源"的 /ws：开发与部署同一套地址，邀请链接也不用带参数。
+    proxy: {
+      '/ws': {
+        target: 'ws://127.0.0.1:8787',
+        ws: true,
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

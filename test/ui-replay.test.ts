@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { parseRecord, serializeRecord, type GameRecord } from '../src/ui/replay';
+import { parseRecord, serializeRecord, type GameRecord } from '../src/core/Record';
 import { createLocalTransport } from '../src/ui/transport';
 
 type Transport = ReturnType<typeof createLocalTransport>;

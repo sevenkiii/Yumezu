@@ -17,10 +17,19 @@ React + SVG 界面。**只负责显示状态与产生 Action，从不修改游�
 
 ## 对局记录 / 回放（开发面板里）
 
-- `replay.ts` 把一局压成 **种子 + 行动序列** 的 JSON（引擎是确定性的，所以能逐帧重现）。
+- 记录格式在 `src/core/Record.ts`：一局压成 **种子 + 行动序列** 的 JSON（引擎是确定性的，所以能逐帧重现）。
 - `transport.ts` 里：`record` 实时给出当前这一局的 JSON，`loadRecord / replayStep / replayBack / stopReplay`
   负责载入与逐步回放；**回放期间 App 会把 legalActions 置空**，棋盘不可操作，看完可以「结束回放」接着玩。
 - 面板入口在「开发面板 → 对局记录 / 回放」：复制记录发给协作者，或把别人的记录粘进来逐步重放。
+
+## 联机（Phase 7）
+
+- `transport-remote.ts` 用 WebSocket 实现**同一个 `GameTransport`**：界面代码一行都不用改，
+  `App` 只负责选"本地 / 联机"（`LocalSession` / `RemoteSession`）。
+- 默认连 `ws(s)://<当前地址>/ws`（开发时 Vite 代理到 8787，部署时服务端同端口提供），
+  需要连别的机器时用 `?server=ws://...` 覆盖；`?room=房间号` 直接进房间。
+- 联机时：悔棋不可用、不能换视角、回放面板只剩「复制记录」；顶栏显示对手在线状态。
+- 进房间的等待界面在 `components/OnlineRoom.tsx`（房间号 + 邀请链接 + 复制）。
 
 ## 数据流
 

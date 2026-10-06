@@ -2,11 +2,11 @@
  * 对局记录：一份可以完整重放这一局的 JSON。
  *
  * 只存**种子 + 行动序列**——引擎是确定性的（所有随机都走注入的 RNG，见 RULES.md §15），
- * 所以有这两样就能一帧一帧重现整局。用法：打完发现哪里怪，把这段 JSON 贴给协作者，
- * 对方载入后逐步回放即可，不需要截图或口述。
+ * 所以有这两样就能一帧一帧重现整局。界面用它做"复制 / 回放"，
+ * 服务端用它做断线重连与对局存档，两边共用同一份格式。
  */
 
-import type { Action } from '../core/Action';
+import type { Action } from './Action';
 
 export interface GameRecord {
   readonly version: 1;
@@ -22,7 +22,7 @@ export function serializeRecord(record: GameRecord): string {
 }
 
 /**
- * 解析一段记录文本；不合法就返回 null（绝不抛错，输入来自用户粘贴）。
+ * 解析一段记录文本；不合法就返回 null（绝不抛错，输入可能来自用户粘贴）。
  * 只做形状校验：行动是否**合法**由引擎在回放时判断。
  */
 export function parseRecord(text: string): GameRecord | null {

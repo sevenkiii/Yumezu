@@ -20,6 +20,8 @@ export interface ReplayPanelProps {
   readonly record: string;
   /** 正在回放时的进度；null = 正常对局。 */
   readonly replay: ReplayStatus | null;
+  /** 联机对局里只能"复制记录"：载入回放由服务端那份记录负责。 */
+  readonly readOnly?: boolean;
   readonly onLoad: (record: string) => boolean;
   readonly onStop: () => void;
   readonly onStep: () => void;
@@ -33,6 +35,7 @@ export function ReplayPanel({
   text,
   record,
   replay,
+  readOnly = false,
   onLoad,
   onStop,
   onStep,
@@ -96,9 +99,11 @@ export function ReplayPanel({
         <button type="button" className="ghost" onClick={() => void copy()}>
           {labels.copy}
         </button>
-        <button type="button" className="ghost" onClick={load} disabled={draft.trim() === ''}>
-          {labels.load}
-        </button>
+        {readOnly ? null : (
+          <button type="button" className="ghost" onClick={load} disabled={draft.trim() === ''}>
+            {labels.load}
+          </button>
+        )}
         {inReplay ? (
           <button type="button" className="ghost" onClick={onStop}>
             {labels.stop}
@@ -106,7 +111,7 @@ export function ReplayPanel({
         ) : null}
       </div>
 
-      {replay === null ? null : (
+      {replay === null || readOnly ? null : (
         <div className="replay-panel__row">
           <button type="button" className="ghost" onClick={onBack} disabled={replay.step === 0}>
             {labels.prev}
@@ -128,13 +133,15 @@ export function ReplayPanel({
         </div>
       )}
 
-      <textarea
-        className="replay-panel__text"
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        placeholder={labels.placeholder}
-        spellCheck={false}
-      />
+      {readOnly ? null : (
+        <textarea
+          className="replay-panel__text"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder={labels.placeholder}
+          spellCheck={false}
+        />
+      )}
 
       {notice === null ? null : <p className="replay-panel__notice">{notice}</p>}
     </section>

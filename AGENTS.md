@@ -23,6 +23,7 @@ npm run demo           # 跑完一整局 3v3
 npm run build          # 类型检查 + 生产构建
 npm run simulate -- --games 200 --seed base   # Phase 5 统计工具
 npm run stats          # 重新生成数值总表 STATS.md（从定义生成，别手改那张表）
+npm run server         # 联机服务端（0.0.0.0:8787，顺带托管 dist/）
 ```
 
 CI 依次执行 lint → format:check → typecheck → test。改动后请本地跑通。
@@ -73,11 +74,16 @@ CI 依次执行 lint → format:check → typecheck → test。改动后请本�
 
 - `npm run stats` 从定义生成 **`STATS.md`（数值总表）**，调平衡看这张；改完数值记得重跑。
 - **对局记录 / 回放**：开发面板里可以复制"种子 + 行动序列"的 JSON，别人粘回去能精确重放
-  （见 `src/ui/README.md` 与 `src/ui/replay.ts`）。
+  （格式在 `src/core/Record.ts`，界面侧见 `src/ui/README.md`）。
 - 结算幕布：分出胜负时盖屏，点一下收起（`ResultOverlay`）。
 
 样式集中在 `src/ui/styles/`，按 `@layer` 分层（顺序在 `layers.css`）。
-当前 **17 个测试文件 / 142 个测试通过**。
+当前 **19 个测试文件 / 152 个测试通过**。
 
-下一步：Phase 7 联机（`src/server` 目前只有 README）；`src/ai` 仍是空目录，
-AI 按"够用的对手 + 抓 bug 的 fuzzer"来做即可（平衡数据主要靠真人测试 + 对局记录）。
+**Phase 7（联机）核心已完成**：`npm run server` 起一个服务器权威的联机服务
+（房间、断线重连、跨机可玩；见 `src/server/README.md`）。开发时 Vite 把 `/ws`
+代理到 8787，页面永远连自己这个源的 `/ws`，邀请链接只要带 `?room=`。
+还没做：观战、换设备接管、房间列表。
+
+`src/ai` 仍是空目录：AI 按"够用的对手 + 抓 bug 的 fuzzer"来做即可
+（平衡数据主要靠真人测试 + 对局记录）。

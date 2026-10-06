@@ -73,6 +73,25 @@ export const zhCN: UiText = {
     dismiss: '点击任意处查看棋盘',
   },
 
+  online: {
+    title: '联机对局',
+    roomLabel: '房间号',
+    roomPlaceholder: '和朋友约定一个房间号',
+    join: '进入房间',
+    hint: '两人用同一个房间号就能开打；把下面的邀请链接发给对手最省事。',
+    connecting: '正在连接服务器…',
+    waiting: '等待对手加入…',
+    closed: '连接已断开（点返回可以重新来）',
+    roomFull: '这个房间已经满了',
+    back: '返回',
+    invite: '邀请链接',
+    copyLink: '复制邀请链接',
+    copied: '已复制',
+    opponentOnline: '对手在线',
+    opponentOffline: '对手掉线了',
+    you: '你',
+  },
+
   deploy: {
     title: '部署',
     hint: '点击自己的出生区域中的节点放置角色（每个节点最多 1 人）',
