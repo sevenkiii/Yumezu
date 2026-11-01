@@ -18,6 +18,10 @@ if (entry === undefined) {
   process.exit(1);
 }
 
+// run-ts 是脚本运行器，不是 `vite` 开发服务器。禁止加载开发模式里
+// “随 Vite 自动启动联机子进程”的插件，否则 `npm run server` 会自己抢占 8787。
+process.env.YUMEZU_DISABLE_EMBEDDED_SERVER = '1';
+
 const server = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',

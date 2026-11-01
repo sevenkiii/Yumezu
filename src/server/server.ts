@@ -80,6 +80,10 @@ export function createGameServer(options: GameServerOptions): GameServer {
     serveStatic(request, response, staticDir);
   });
   const sockets = new WebSocketServer({ server: http });
+  let rejectListen: ((error: Error) => void) | null = null;
+  sockets.on('error', (error) => {
+    if (rejectListen !== null) rejectListen(error);
+  });
 
   function send(socket: WebSocket, message: ServerMessage): void {
     if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(message));
@@ -263,12 +267,23 @@ export function createGameServer(options: GameServerOptions): GameServer {
 
   http.listen(options.port, options.host);
 
-  const listening = new Promise<number>((resolveListening) => {
+  const listening = new Promise<number>((resolveListening, rejectListening) => {
     if (http.listening) {
       resolveListening((http.address() as AddressInfo).port);
       return;
     }
-    http.once('listening', () => resolveListening((http.address() as AddressInfo).port));
+    const onError = (error: Error): void => {
+      clearInterval(heartbeat);
+      rejectListen = null;
+      rejectListening(error);
+    };
+    rejectListen = onError;
+    http.once('error', onError);
+    http.once('listening', () => {
+      rejectListen = null;
+      http.off('error', onError);
+      resolveListening((http.address() as AddressInfo).port);
+    });
   });
 
   return {

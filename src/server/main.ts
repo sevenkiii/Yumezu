@@ -52,6 +52,20 @@ export function parseServerArgs(argv: readonly string[]): ServerCliOptions {
 export async function main(argv: readonly string[]): Promise<void> {
   const options = parseServerArgs(argv);
   const server = createGameServer(options);
+  try {
+    await server.listening;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      '联机服务无法监听 ' +
+        options.host +
+        ':' +
+        options.port +
+        '。端口可能被占用，请先停止旧进程再重试。\n' +
+        detail,
+      { cause: error },
+    );
+  }
   const shown = options.host === '0.0.0.0' ? 'localhost' : options.host;
   process.stdout.write(
     '夢図 联机服务已启动\n' +
