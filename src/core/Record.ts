@@ -12,6 +12,8 @@ export interface GameRecord {
   readonly version: 1;
   readonly mapSeed: string;
   readonly gameSeed: string;
+  /** 参战人数；旧记录没有这个字段时按 2 人处理。 */
+  readonly playerCount: number;
   readonly maxTurns: number | null;
   readonly actions: readonly Action[];
 }
@@ -38,6 +40,9 @@ export function parseRecord(text: string): GameRecord | null {
   if (typeof candidate.mapSeed !== 'string' || typeof candidate.gameSeed !== 'string') return null;
   const maxTurns = candidate.maxTurns;
   if (maxTurns !== null && typeof maxTurns !== 'number') return null;
+  const playerCount = candidate.playerCount ?? 2;
+  if (typeof playerCount !== 'number' || !Number.isInteger(playerCount)) return null;
+  if (playerCount < 2 || playerCount > 4) return null;
   if (!Array.isArray(candidate.actions)) return null;
   for (const action of candidate.actions) {
     if (typeof action !== 'object' || action === null) return null;
@@ -47,6 +52,7 @@ export function parseRecord(text: string): GameRecord | null {
     version: 1,
     mapSeed: candidate.mapSeed,
     gameSeed: candidate.gameSeed,
+    playerCount,
     maxTurns: maxTurns === null ? null : (maxTurns as number),
     actions: candidate.actions as readonly Action[],
   };

@@ -28,10 +28,18 @@ describe('对局记录', () => {
       version: 1,
       mapSeed: 'm',
       gameSeed: 'g',
+      playerCount: 2,
       maxTurns: null,
       actions: [{ type: 'PASS', player: 'P1' }],
     };
     expect(parseRecord(serializeRecord(record))).toEqual(record);
+  });
+
+  it('旧记录缺少人数时按两人局读取', () => {
+    const parsed = parseRecord(
+      '{"version":1,"mapSeed":"m","gameSeed":"g","maxTurns":null,"actions":[]}',
+    );
+    expect(parsed?.playerCount).toBe(2);
   });
 
   it('读不出来的文本返回 null（不抛错）', () => {
@@ -62,12 +70,28 @@ describe('对局记录', () => {
     while (guard < total + 5) {
       const status = replay.getSnapshot().replay;
       if (status === null || status.step >= status.total) break;
-      replay.replayStep();
+      expect(replay.replayStep()).toBe(true);
       guard += 1;
     }
 
     expect(replay.getSnapshot().replay).toMatchObject({ step: total, total });
+    expect(replay.replayStep()).toBe(false);
     expect(replay.getSnapshot().stateHash).toBe(expectedHash);
+  });
+
+  it('四人局记录会带着人数一起还原', () => {
+    const live = createLocalTransport({
+      mapSeed: 'replay-four-map',
+      gameSeed: 'replay-four-game',
+      playerCount: 4,
+    });
+    playSteps(live, 16);
+    const text = live.getSnapshot().record;
+    expect(parseRecord(text)?.playerCount).toBe(4);
+
+    const replay = newTransport();
+    expect(replay.loadRecord(text)).toBe(true);
+    expect(replay.getSnapshot().view.seats).toEqual(['P1', 'P2', 'P3', 'P4']);
   });
 
   it('回放可以回退，也可以中途停下继续玩', () => {
@@ -96,5 +120,20 @@ describe('对局记录', () => {
     expect(transport.loadRecord('{ 这不是记录 }')).toBe(false);
     expect(transport.getSnapshot().stateHash).toBe(before);
     expect(transport.getSnapshot().replay).toBeNull();
+  });
+
+  it('记录与局面不符时前进一步返回 false，自动播放不会无限重试', () => {
+    const transport = newTransport();
+    const record: GameRecord = {
+      version: 1,
+      mapSeed: 'replay-map',
+      gameSeed: 'replay-game',
+      playerCount: 2,
+      maxTurns: null,
+      actions: [{ type: 'PASS', player: 'P4' }],
+    };
+    expect(transport.loadRecord(serializeRecord(record))).toBe(true);
+    expect(transport.replayStep()).toBe(false);
+    expect(transport.getSnapshot().replay).toMatchObject({ step: 0, total: 1 });
   });
 });

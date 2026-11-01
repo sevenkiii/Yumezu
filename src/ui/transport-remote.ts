@@ -44,6 +44,8 @@ export interface RemoteJoinOptions {
   /** `ws://host:port`（不要带路径）。 */
   readonly url: string;
   readonly roomId: string;
+  /** 首次建房时指定 2 ~ 4 人；重连会沿用房间配置。 */
+  readonly playerCount?: number;
   /** 默认用 localStorage；测试里注入内存实现。 */
   readonly storage?: RemoteStorage;
   /** 应用层心跳间隔（毫秒）。 */
@@ -57,8 +59,12 @@ export interface RemoteJoin {
   /** 第一份快照到手后 resolve；之后这个 transport 一直有效（断线重连也复用它）。 */
   readonly ready: Promise<GameTransport>;
   readonly status: RemoteStatus;
-  /** 对手是否在线（本地对局恒为 true）。 */
-  readonly opponentOnline: boolean;
+  /** 当前仍在线的参战座位。 */
+  readonly onlinePlayers: readonly PlayerId[];
+  /** 房间目标人数。 */
+  readonly playerCount: number;
+  /** 已经加入房间的座位数。 */
+  readonly joinedCount: number;
   /** 我坐哪一位；还没进房间时是 null。 */
   readonly seat: PlayerId | null;
   subscribe(listener: () => void): () => void;
@@ -86,7 +92,9 @@ export function connectRemote(options: RemoteJoinOptions): RemoteJoin {
   const listeners = new Set<() => void>();
   let socket: WebSocket | null = null;
   let status: RemoteStatus = 'connecting';
-  let opponentOnline = false;
+  let onlinePlayers: readonly PlayerId[] = [];
+  let roomPlayerCount = options.playerCount ?? 2;
+  let joinedCount = 0;
   let seat: PlayerId | null = null;
   let closedByUser = false;
   let retries = 0;
@@ -145,7 +153,9 @@ export function connectRemote(options: RemoteJoinOptions): RemoteJoin {
       // 回放在服务端那份记录上做（见开发面板），客户端不接管对局
       return false;
     },
-    replayStep(): void {},
+    replayStep(): boolean {
+      return false;
+    },
     replayBack(): void {},
     stopReplay(): void {},
   };
@@ -190,11 +200,16 @@ export function connectRemote(options: RemoteJoinOptions): RemoteJoin {
     switch (message.type) {
       case 'welcome':
         seat = message.seat;
+        roomPlayerCount = message.playerCount;
         storage.setItem(tokenKey(options.roomId), message.token);
         setStatus('waiting');
+        notify();
         return;
       case 'waiting':
+        joinedCount = message.joined;
+        roomPlayerCount = message.playerCount;
         setStatus('waiting');
+        notify();
         return;
       case 'snapshot':
         handleSnapshot(message.snapshot);
@@ -202,7 +217,7 @@ export function connectRemote(options: RemoteJoinOptions): RemoteJoin {
         resolveReady(transport);
         return;
       case 'presence':
-        opponentOnline = message.opponentOnline;
+        onlinePlayers = message.online;
         notify();
         return;
       case 'error':
@@ -238,6 +253,7 @@ export function connectRemote(options: RemoteJoinOptions): RemoteJoin {
         type: 'hello',
         version: PROTOCOL_VERSION,
         roomId: options.roomId,
+        playerCount: options.playerCount,
         token,
       };
       next.send(JSON.stringify(hello));
@@ -271,8 +287,14 @@ export function connectRemote(options: RemoteJoinOptions): RemoteJoin {
     get status() {
       return status;
     },
-    get opponentOnline() {
-      return opponentOnline;
+    get onlinePlayers() {
+      return onlinePlayers;
+    },
+    get playerCount() {
+      return roomPlayerCount;
+    },
+    get joinedCount() {
+      return joinedCount;
     },
     get seat() {
       return seat;

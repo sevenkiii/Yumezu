@@ -39,7 +39,12 @@ export function createBattleState(setup: BattleSetup = {}): GameState {
 
   if (setup.p1 !== undefined && setup.p2 !== undefined) {
     state.characters = [];
-    state.roster = { P1: setup.p1.slice(), P2: setup.p2.slice() };
+    state.roster = {
+      P1: setup.p1.slice(),
+      P2: setup.p2.slice(),
+      P3: [],
+      P4: [],
+    };
     for (const typeId of setup.p1) {
       state.characters.push(createCharacter('P1', typeId, state.spawn.P1.center));
     }

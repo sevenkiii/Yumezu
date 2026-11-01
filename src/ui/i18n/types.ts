@@ -53,6 +53,8 @@ export interface UiText {
   readonly player: {
     readonly p1: string;
     readonly p2: string;
+    readonly p3: string;
+    readonly p4: string;
     readonly you: string;
     readonly opponent: string;
     readonly currentTurn: string;
@@ -86,7 +88,11 @@ export interface UiText {
     readonly title: string;
     readonly roomLabel: string;
     readonly roomPlaceholder: string;
+    readonly create: string;
+    readonly createHint: string;
     readonly join: string;
+    readonly joinHint: string;
+    readonly or: string;
     readonly hint: string;
     readonly connecting: string;
     readonly waiting: string;
@@ -96,8 +102,8 @@ export interface UiText {
     readonly invite: string;
     readonly copyLink: string;
     readonly copied: string;
-    readonly opponentOnline: string;
-    readonly opponentOffline: string;
+    readonly onlinePlayers: (online: number, total: number) => string;
+    readonly roomPlayers: (joined: number, total: number) => string;
     readonly you: string;
   };
   readonly stat: {
@@ -122,6 +128,8 @@ export interface UiText {
     readonly start: string;
     readonly randomize: string;
     readonly hint: string;
+    readonly playerCount: string;
+    readonly playerCountOption: (count: number) => string;
   };
   readonly dev: {
     readonly title: string;
@@ -149,6 +157,8 @@ export interface UiText {
   };
   readonly format: {
     readonly turn: (index: number) => string;
+    readonly currentPlayer: (player: string) => string;
+    readonly yourTurn: (player: string) => string;
     readonly hp: (hp: number, maxHp: number) => string;
     readonly cooldown: (value: number) => string;
     readonly handCount: (count: number) => string;

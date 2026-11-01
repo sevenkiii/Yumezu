@@ -24,6 +24,7 @@ export interface GameSessionOptions {
   readonly roomId: string;
   readonly mapSeed: string;
   readonly gameSeed: string;
+  readonly playerCount?: number;
   readonly maxTurns?: number | null;
 }
 
@@ -45,6 +46,7 @@ export function createGameSession(options: GameSessionOptions): GameSession {
   let state = createGameFromSeed({
     mapSeed: options.mapSeed,
     gameSeed: options.gameSeed,
+    playerCount: options.playerCount ?? 2,
     maxTurns,
   });
   /** 单调递增：客户端靠它判断"来了新的一手"。 */
@@ -56,6 +58,7 @@ export function createGameSession(options: GameSessionOptions): GameSession {
       version: 1,
       mapSeed: options.mapSeed,
       gameSeed: options.gameSeed,
+      playerCount: options.playerCount ?? 2,
       maxTurns,
       actions: history.slice(),
     };
@@ -74,7 +77,9 @@ export function createGameSession(options: GameSessionOptions): GameSession {
       finished: done,
       stateHash: hashState(state),
       eventSeq,
-      record: record(),
+      // 进行中不下发“种子 + 全部行动”：客户端可据此重算出所有人的手牌。
+      // 对局结束后完整记录才是公开复盘资料。
+      record: done ? record() : '',
     };
   }
 

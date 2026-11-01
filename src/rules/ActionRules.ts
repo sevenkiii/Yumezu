@@ -9,7 +9,7 @@ import { cardDefinition } from '../cards/Card';
 import { characterDefinition } from '../characters/Character';
 import type { Action } from '../core/Action';
 import type { GameState, PlayerId } from '../core/GameState';
-import { charactersOf, findCharacter, opponentOf } from '../core/GameState';
+import { charactersOf, findCharacter, opponentsOf } from '../core/GameState';
 import { distance } from '../map/Graph';
 import { reachableDestinations } from './MovementRules';
 import { cardChoiceEquals, skillChoiceEquals } from './Targeting';
@@ -159,7 +159,7 @@ export function getLegalActions(state: GameState): Action[] {
   if (state.phase === 'DEPLOY') return deploymentActions(state, player);
 
   const actions: Action[] = [];
-  const enemy = opponentOf(player);
+  const enemies = opponentsOf(state, player);
   for (const character of charactersOf(state, player)) {
     if (!character.alive) continue;
     if (!character.statuses.Frozen) {
@@ -167,11 +167,13 @@ export function getLegalActions(state: GameState): Action[] {
         actions.push({ type: 'MOVE', player, characterId: character.id, to });
       }
     }
-    for (const target of charactersOf(state, enemy)) {
-      if (!target.alive) continue;
-      const gap = distance(state.map.graph, character.position, target.position);
-      if (gap <= character.attackRange) {
-        actions.push({ type: 'ATTACK', player, characterId: character.id, targetId: target.id });
+    for (const enemy of enemies) {
+      for (const target of charactersOf(state, enemy)) {
+        if (!target.alive) continue;
+        const gap = distance(state.map.graph, character.position, target.position);
+        if (gap <= character.attackRange) {
+          actions.push({ type: 'ATTACK', player, characterId: character.id, targetId: target.id });
+        }
       }
     }
     if (character.skillCd === 0 && !character.statuses.SkillSealed) {

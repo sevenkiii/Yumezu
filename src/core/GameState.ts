@@ -14,12 +14,30 @@ import type { RngStreamName, RngStreamState } from './RNG';
 
 export type { EdgeKey, Graph, VertexId };
 
-export type PlayerId = 'P1' | 'P2';
+/** 座位最多 4 个；实际参战的人看 `GameState.seats`。 */
+export type PlayerId = 'P1' | 'P2' | 'P3' | 'P4';
 
-export const PLAYER_IDS: readonly PlayerId[] = ['P1', 'P2'];
+export const PLAYER_IDS: readonly PlayerId[] = ['P1', 'P2', 'P3', 'P4'];
 
-export function opponentOf(player: PlayerId): PlayerId {
-  return player === 'P1' ? 'P2' : 'P1';
+export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = PLAYER_IDS.length;
+
+export type PlayerCount = 2 | 3 | 4;
+
+export const PLAYER_COUNTS: readonly PlayerCount[] = [2, 3, 4];
+
+/** 把外部传入的人数收敛为规则允许的 2 ~ 4 人。 */
+export function normalizePlayerCount(value: number | undefined): PlayerCount {
+  const count = value ?? MIN_PLAYERS;
+  if (!Number.isInteger(count) || count < MIN_PLAYERS || count > MAX_PLAYERS) {
+    throw new RangeError('参战人数必须是 2 ~ 4 的整数');
+  }
+  return count as PlayerCount;
+}
+
+/** 除自己以外的所有玩家（多人混战里人人互为敌人）。 */
+export function opponentsOf(state: GameState, player: PlayerId): PlayerId[] {
+  return state.seats.filter((seat) => seat !== player);
 }
 
 /** 角色实例 id，形如 "P1:Nana"。 */
@@ -163,6 +181,8 @@ export interface GameState {
   /** 用于阵容、先手、抽牌等游戏内随机。 */
   readonly gameSeed: string;
   map: MapState;
+  /** 这一局真正参战的座位，顺序就是行动轮转顺序。 */
+  readonly seats: readonly PlayerId[];
   spawn: Record<PlayerId, SpawnInfo>;
   roster: Record<PlayerId, CharacterTypeId[]>;
   characters: CharacterState[];

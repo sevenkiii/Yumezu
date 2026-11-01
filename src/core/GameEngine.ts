@@ -34,7 +34,7 @@ import {
 import { actingCharacterId, type Action } from './Action';
 import type { GameEvent } from './Event';
 import type { CharacterState, Deployment, GameState, PlayerId, VertexId } from './GameState';
-import { PLAYER_IDS, findCharacter, opponentOf } from './GameState';
+import { PLAYER_IDS, findCharacter, normalizePlayerCount } from './GameState';
 import { createRngStreams, nextIndex } from './RNG';
 
 export class EngineError extends Error {
@@ -50,7 +50,10 @@ export interface CreateGameOptions {
   /** 用于阵容、先手与抽牌。 */
   readonly gameSeed: string;
   readonly graph: Graph;
-  readonly spawnCenters: Record<PlayerId, VertexId>;
+  /** 只给出参战座位的中心即可；未参与的座位留空。 */
+  readonly spawnCenters: Partial<Record<PlayerId, VertexId>>;
+  /** 参战人数（2 ~ 4）；省略时按 2 人。 */
+  readonly playerCount?: number;
   /** 可选回合上限；省略表示不设上限。 */
   readonly maxTurns?: number | null;
   /**
@@ -63,23 +66,28 @@ export interface CreateGameOptions {
 
 export function createGame(options: CreateGameOptions): GameState {
   const rng = createRngStreams(options.gameSeed);
-  const first = nextIndex(rng.firstPlayer, PLAYER_IDS.length);
+  const playerCount = normalizePlayerCount(options.playerCount);
+  const seats = PLAYER_IDS.slice(0, playerCount);
+  const first = nextIndex(rng.firstPlayer, seats.length);
   rng.firstPlayer = first.next;
-  const firstPlayer = PLAYER_IDS[first.value] as PlayerId;
+  const firstPlayer = seats[first.value] as PlayerId;
 
   const state: GameState = {
     config: { maxTurns: options.maxTurns ?? null },
     mapSeed: options.mapSeed,
     gameSeed: options.gameSeed,
     map: { graph: options.graph, blockedEdges: [], traps: [], nextTrapSeq: 0 },
+    seats,
     spawn: computeSpawnInfo(options.graph, options.spawnCenters),
-    roster: { P1: [], P2: [] },
+    roster: { P1: [], P2: [], P3: [], P4: [] },
     characters: [],
     players: {
       P1: { id: 'P1', hand: [], nextCardSeq: 0 },
       P2: { id: 'P2', hand: [], nextCardSeq: 0 },
+      P3: { id: 'P3', hand: [], nextCardSeq: 0 },
+      P4: { id: 'P4', hand: [], nextCardSeq: 0 },
     },
-    deployment: { P1: null, P2: null },
+    deployment: { P1: null, P2: null, P3: null, P4: null },
     phase: 'DEPLOY',
     currentPlayer: 'P1',
     firstPlayer,
@@ -108,6 +116,8 @@ export function createGame(options: CreateGameOptions): GameState {
 export interface CreateGameFromSeedOptions {
   readonly mapSeed: string;
   readonly gameSeed: string;
+  /** 参战人数（2 ~ 4，默认 2）；地图规模会随人数放大。 */
+  readonly playerCount?: number;
   /** 覆盖地图生成参数；省略时使用 DEFAULT_MAP_PARAMS。 */
   readonly mapParams?: Partial<MapGenerationParams>;
   readonly maxTurns?: number | null;
@@ -116,12 +126,28 @@ export interface CreateGameFromSeedOptions {
 }
 
 export function createGameFromSeed(options: CreateGameFromSeedOptions): GameState {
-  const generated = generateMap(options.mapSeed, options.mapParams);
+  const playerCount = normalizePlayerCount(options.playerCount);
+  // 地图随人数放大：每多一人 +6 个节点，边数与直径按节点数等比放宽
+  const nodeCount = 30 + (playerCount - 2) * 6;
+  const scaled = {
+    nodeCount,
+    edgeCountRange: [Math.round((nodeCount * 4) / 3), Math.round((nodeCount * 5) / 3)] as [
+      number,
+      number,
+    ],
+    diameterRange: [
+      Math.round(Math.sqrt(nodeCount) * 1.28),
+      Math.round(Math.sqrt(nodeCount) * 1.83),
+    ] as [number, number],
+    ...options.mapParams,
+  };
+  const generated = generateMap(options.mapSeed, scaled, playerCount);
   return createGame({
     mapSeed: options.mapSeed,
     gameSeed: options.gameSeed,
     graph: generated.graph,
     spawnCenters: generated.spawnCenters,
+    playerCount,
     maxTurns: options.maxTurns ?? null,
     deployment: options.deployment,
   });
@@ -198,13 +224,15 @@ function performDeployment(
   };
   events.push({ type: 'DEPLOY_SUBMITTED', player: action.player });
 
-  const other = opponentOf(action.player);
-  if (state.deployment[other] === null) {
-    state.currentPlayer = other;
+  const next = state.seats.find(
+    (player) => player !== action.player && state.deployment[player] === null,
+  );
+  if (next !== undefined) {
+    state.currentPlayer = next;
     return;
   }
 
-  for (const player of PLAYER_IDS) {
+  for (const player of state.seats) {
     const deployment = state.deployment[player];
     if (deployment === null) continue;
     for (const assignment of deployment.assignments) {
@@ -212,13 +240,13 @@ function performDeployment(
       if (character !== null) character.position = assignment.vertex;
     }
   }
-  events.push({
-    type: 'DEPLOY_REVEALED',
-    deployment: {
-      P1: state.deployment.P1 as Deployment,
-      P2: state.deployment.P2 as Deployment,
-    },
-  });
+  const revealed: Record<PlayerId, Deployment> = {
+    P1: state.deployment.P1 ?? { assignments: [] },
+    P2: state.deployment.P2 ?? { assignments: [] },
+    P3: state.deployment.P3 ?? { assignments: [] },
+    P4: state.deployment.P4 ?? { assignments: [] },
+  };
+  events.push({ type: 'DEPLOY_REVEALED', deployment: revealed });
 
   state.phase = 'BATTLE';
   state.currentPlayer = state.firstPlayer;

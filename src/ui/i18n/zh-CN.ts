@@ -11,7 +11,7 @@ export const zhCN: UiText = {
 
   app: {
     title: '夢図',
-    subtitle: '随机平面图 · 3v3 · 交替行动',
+    subtitle: '随机平面图 · 2–4 人混战 · 轮流行动',
   },
 
   action: {
@@ -36,6 +36,8 @@ export const zhCN: UiText = {
   player: {
     p1: 'P1',
     p2: 'P2',
+    p3: 'P3',
+    p4: 'P4',
     you: '你',
     opponent: '对手',
     currentTurn: '当前行动',
@@ -45,7 +47,7 @@ export const zhCN: UiText = {
   panel: {
     hand: '手牌',
     yourTeam: '你的角色',
-    enemyTeam: '对手角色',
+    enemyTeam: '其他角色',
     actionLog: '行动记录',
     detail: '详情',
     selectHint: '点击角色卡或手牌，这里会显示完整信息',
@@ -77,18 +79,22 @@ export const zhCN: UiText = {
     title: '联机对局',
     roomLabel: '房间号',
     roomPlaceholder: '和朋友约定一个房间号',
-    join: '进入房间',
-    hint: '两人用同一个房间号就能开打；把下面的邀请链接发给对手最省事。',
+    create: '创建房间',
+    createHint: '选择人数后直接创建，再把邀请链接发给朋友。',
+    join: '加入房间',
+    joinHint: '输入房主分享的房间号；人数需要和房主一致。',
+    or: '或',
+    hint: '同一房间要选择相同人数；把邀请链接发给其他人最省事。',
     connecting: '正在连接服务器…',
-    waiting: '等待对手加入…',
-    closed: '连接已断开（点返回可以重新来）',
+    waiting: '等待其他玩家加入…',
+    closed: '连接失败：联机服务不可用，请重启 npm run dev 后重试',
     roomFull: '这个房间已经满了',
     back: '返回',
     invite: '邀请链接',
     copyLink: '复制邀请链接',
     copied: '已复制',
-    opponentOnline: '对手在线',
-    opponentOffline: '对手掉线了',
+    onlinePlayers: (online, total) => '在线 ' + online + ' / ' + total,
+    roomPlayers: (joined, total) => '已加入 ' + joined + ' / ' + total,
     you: '你',
   },
 
@@ -109,6 +115,8 @@ export const zhCN: UiText = {
     start: '开始对局',
     randomize: '随机',
     hint: '相同的地图种子必然生成相同的地图与出生点。',
+    playerCount: '参战人数',
+    playerCountOption: (count) => count + ' 人',
   },
 
   dev: {
@@ -138,6 +146,8 @@ export const zhCN: UiText = {
 
   format: {
     turn: (index) => '回合 ' + index,
+    currentPlayer: (player) => player + ' 行动中',
+    yourTurn: (player) => player + ' · 轮到你行动',
     hp: (hp, maxHp) => hp + ' / ' + maxHp,
     cooldown: (value) => (value <= 0 ? '可用' : 'CD ' + value),
     handCount: (count) => count + ' 张',

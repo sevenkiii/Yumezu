@@ -4,25 +4,26 @@
 
 ## 文件
 
-| 文件 | 覆盖内容 |
-|---|---|
-| `map.test.ts` | 固定网格地图的规模 / 结构 / 出生点、图工具 |
-| `map-generator.test.ts` | 生成确定性、40 个 seed 的质量扫描、失败处理、与固定地图的一致性 |
-| `spawn.test.ts` | 出生候选约束、地图中心、随机选点、无候选时的处理 |
-| `movement.test.ts` | 移动可达性、占用、封路、冻结 |
-| `combat.test.ts` | 伤害管线、护盾 / 标记 / 影返、陷阱、阵亡 |
-| `characters.test.ts` | 6 名角色的技能行为 |
-| `cards.test.ts` | 11 张功能牌的效果与非法条件 |
-| `engine.test.ts` | 部署、回合结构、CD、胜负、视图、合法行动枚举 |
-| `golden.test.ts` | 固定 seed 的整局一致性（状态哈希） |
-| `demo.test.ts` | 验收 demo：随机地图 + 完整跑完一局 |
-| `simulation.test.ts` | 统计工具的可复现性与统计口径校验 |
-| `ui-interaction.test.ts` | 交互层：选中 → 瞄准 → 执行的每种流程产出的 Action 都必须合法 |
-| `ui-render.test.tsx` | 渲染冒烟测试：真实状态喂进组件不报错，关键信息确实出现（用 react-dom/server，无需 jsdom） |
-| `simulate.ts` | **统计工具 CLI**（用 `npm run simulate` 运行，不是测试） |
-| `support/simulate.ts` | 批量对局与统计聚合（胜率 / 长度 / 角色 / 卡牌） |
-| `support/fixtures.ts` | 测试夹具：快速搭出可复现的中局状态 |
-| `support/randomAgent.ts` | 随机合法行动决策器（demo 与统计工具共用） |
+| 文件                     | 覆盖内容                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| `map.test.ts`            | 固定网格地图的规模 / 结构 / 出生点、图工具                                                |
+| `map-generator.test.ts`  | 生成确定性、40 个 seed 的质量扫描、失败处理、与固定地图的一致性                           |
+| `spawn.test.ts`          | 出生候选约束、地图中心、随机选点、无候选时的处理                                          |
+| `movement.test.ts`       | 移动可达性、占用、封路、冻结                                                              |
+| `combat.test.ts`         | 伤害管线、护盾 / 标记 / 影返、陷阱、阵亡                                                  |
+| `characters.test.ts`     | 6 名角色的技能行为                                                                        |
+| `cards.test.ts`          | 11 张功能牌的效果与非法条件                                                               |
+| `engine.test.ts`         | 部署、回合结构、CD、胜负、视图、合法行动枚举                                              |
+| `multiplayer.test.ts`    | 2 ~ 4 人座位、人数缩放地图、出生区域、轮转跳过、任意敌人、四人整局与隐私                  |
+| `golden.test.ts`         | 固定 seed 的整局一致性（状态哈希）                                                        |
+| `demo.test.ts`           | 验收 demo：随机地图 + 完整跑完一局                                                        |
+| `simulation.test.ts`     | 统计工具的可复现性与统计口径校验                                                          |
+| `ui-interaction.test.ts` | 交互层：选中 → 瞄准 → 执行的每种流程产出的 Action 都必须合法                              |
+| `ui-render.test.tsx`     | 渲染冒烟测试：真实状态喂进组件不报错，关键信息确实出现（用 react-dom/server，无需 jsdom） |
+| `simulate.ts`            | **统计工具 CLI**（用 `npm run simulate` 运行，不是测试）                                  |
+| `support/simulate.ts`    | 批量对局与统计聚合（胜率 / 长度 / 角色 / 卡牌）                                           |
+| `support/fixtures.ts`    | 测试夹具：快速搭出可复现的中局状态                                                        |
+| `support/randomAgent.ts` | 随机合法行动决策器（demo 与统计工具共用）                                                 |
 
 ## 统计工具
 
@@ -45,4 +46,4 @@ npm run simulate -- --games 50 --json-full   # 输出 JSON（含逐局明细）
 - 涉及随机的测试必须固定 seed。
 - 规则变更时先更新 `RULES.md`，再更新对应测试。
 
-> 状态：13 个测试文件 / 101 个测试通过。
+> 状态：20 个测试文件 / 170 个测试通过。

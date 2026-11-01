@@ -20,10 +20,12 @@ import type {
   SpawnInfo,
   Trap,
 } from './GameState';
-import { opponentOf } from './GameState';
+import { opponentsOf } from './GameState';
 
 export interface PlayerView {
   readonly viewer: PlayerId;
+  /** 这一局实际参战的座位；顺序就是行动轮转顺序。 */
+  readonly seats: readonly PlayerId[];
   readonly phase: GamePhase;
   readonly turnIndex: number;
   readonly currentPlayer: PlayerId;
@@ -36,12 +38,16 @@ export interface PlayerView {
   readonly characters: readonly CharacterState[];
   /** 自己的手牌（完整内容）。 */
   readonly hand: readonly HandCard[];
-  /** 对手的手牌数量。 */
+  /** 其他人的手牌数量之和（2 人局就是对手的手牌数）。 */
   readonly opponentHandCount: number;
+  /** 每个座位的手牌数量（自己也在内；多人局看这个）。 */
+  readonly handCounts: Record<PlayerId, number>;
   readonly ownDeployment: Deployment | null;
-  /** 对手的部署：只有双方都提交后才会出现。 */
+  /** 第一个其他玩家的部署；保留供旧两人界面兼容，多人请用 `deployments`。 */
   readonly opponentDeployment: Deployment | null;
   readonly opponentDeploymentSubmitted: boolean;
+  /** 每个座位的部署（自己那一格为 null；多人局看这个）。 */
+  readonly deployments: Record<PlayerId, Deployment | null>;
   /** 最近若干回合的行动与公开事件（已过滤掉会泄露对手手牌的内容）。 */
   readonly recentTurns: readonly {
     readonly action: Action;
@@ -50,10 +56,23 @@ export interface PlayerView {
 }
 
 export function getViewFor(state: GameState, viewer: PlayerId): PlayerView {
-  const opponent = opponentOf(viewer);
+  const others = opponentsOf(state, viewer);
+  const opponent = others[0] ?? null;
   const revealed = state.phase !== 'DEPLOY';
+  const handCounts: Record<PlayerId, number> = { P1: 0, P2: 0, P3: 0, P4: 0 };
+  const deployments: Record<PlayerId, Deployment | null> = {
+    P1: null,
+    P2: null,
+    P3: null,
+    P4: null,
+  };
+  for (const player of state.seats) {
+    handCounts[player] = state.players[player].hand.length;
+    deployments[player] = revealed ? state.deployment[player] : null;
+  }
   return {
     viewer,
+    seats: state.seats,
     phase: state.phase,
     turnIndex: state.turnIndex,
     currentPlayer: state.currentPlayer,
@@ -65,10 +84,12 @@ export function getViewFor(state: GameState, viewer: PlayerId): PlayerView {
     spawn: state.spawn,
     characters: state.characters,
     hand: state.players[viewer].hand,
-    opponentHandCount: state.players[opponent].hand.length,
+    opponentHandCount: others.reduce((sum, player) => sum + state.players[player].hand.length, 0),
+    handCounts,
     ownDeployment: state.deployment[viewer],
-    opponentDeployment: revealed ? state.deployment[opponent] : null,
-    opponentDeploymentSubmitted: state.deployment[opponent] !== null,
+    opponentDeployment: revealed && opponent !== null ? state.deployment[opponent] : null,
+    opponentDeploymentSubmitted: opponent !== null && state.deployment[opponent] !== null,
+    deployments,
     recentTurns: recentTurnsFor(state, viewer),
   };
 }

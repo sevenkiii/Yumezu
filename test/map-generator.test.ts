@@ -22,6 +22,25 @@ describe('地图生成的确定性', () => {
       edgeKeysOf(generateMap('det-b').graph),
     );
   });
+
+  it('四人地图与多人出生点同样完全可复现', () => {
+    const params = {
+      nodeCount: 42,
+      edgeCountRange: [56, 70] as const,
+      diameterRange: [9, 12] as const,
+    };
+    const first = generateMap('det-four', params, 4);
+    const second = generateMap('det-four', params, 4);
+    expect(edgeKeysOf(first.graph)).toEqual(edgeKeysOf(second.graph));
+    expect(first.spawnCenters).toEqual(second.spawnCenters);
+    expect(first.graph.vertices).toHaveLength(42);
+    expect(first.spawnCenters).toMatchObject({
+      P1: expect.any(Number),
+      P2: expect.any(Number),
+      P3: expect.any(Number),
+      P4: expect.any(Number),
+    });
+  });
 });
 
 describe('地图生成的质量', () => {

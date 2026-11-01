@@ -47,6 +47,7 @@ export function useTokenMotion(
 ): TokenMotion {
   const elements = useRef(new Map<CharacterId, SVGGElement>());
   const running = useRef(new Map<CharacterId, Animation>());
+  const runningLunges = useRef(new Set<Animation>());
   /** 角色 id → 这一批里它走位要花的时间（没走位就是 0）。 */
   const trailDurations = useMemo(() => trailDurationsOf(trails), [trails]);
 
@@ -57,12 +58,14 @@ export function useTokenMotion(
 
   // 必须在绘制这一帧之前启动动画，否则会先闪一下"已经站在终点"的画面。
   useIsomorphicLayoutEffect(() => {
-    if (trails.length === 0) return;
-    if (prefersReducedMotion()) return;
+    // 回放可以比一次完整动画更快推进。每一批新事件都先清掉上一批的走位动画，
+    // 否则旧动画会继续相对“已经变了的位置”播放，看起来像角色在重复移动。
+    for (const animation of running.current.values()) animation.cancel();
+    running.current.clear();
+    if (trails.length === 0 || prefersReducedMotion()) return;
     trails.forEach((trail, index) => {
       const element = elements.current.get(trail.characterId);
       if (element === undefined || !supportsAnimate(element)) return;
-      running.current.get(trail.characterId)?.cancel();
       running.current.set(
         trail.characterId,
         element.animate(keyframesOf(trail), {
@@ -78,34 +81,45 @@ export function useTokenMotion(
   // 撞击：出手方冲过去，目标被顶一下。两者都在内层 token__lunge 上做，
   // 所以"先移动后攻击"（例如星奔）时，撞击是叠在走位之上的。
   useIsomorphicLayoutEffect(() => {
+    // 和走位一样，撞击也必须按“事件批次”隔离；否则回放跳到下一手时，
+    // 上一手的撞击可能还挂在内层 g 上继续播放。
+    for (const animation of runningLunges.current) animation.cancel();
+    runningLunges.current.clear();
     if (lunges.length === 0 || prefersReducedMotion()) return;
     lunges.forEach((lunge, index) => {
       // 先走完再撞：同一个角色这一批里如果先位移了，撞击要等它到位
       const delay = lungeDelayMs(lunge, trailDurations, index);
       const attacker = motionOf(elements.current.get(lunge.characterId));
       if (attacker !== null) {
-        start(attacker, lungeKeyframes(lunge), {
-          duration: LUNGE_MS,
-          delay,
-          easing: 'ease-in-out',
-        });
+        runningLunges.current.add(
+          start(attacker, lungeKeyframes(lunge), {
+            duration: LUNGE_MS,
+            delay,
+            easing: 'ease-in-out',
+          }),
+        );
       }
       const target = motionOf(elements.current.get(lunge.targetId));
       if (target !== null) {
-        start(target, knockKeyframes(lunge), {
-          duration: LUNGE_MS * 0.55,
-          delay: delay + LUNGE_MS * LUNGE_IMPACT,
-          easing: 'ease-out',
-        });
+        runningLunges.current.add(
+          start(target, knockKeyframes(lunge), {
+            duration: LUNGE_MS * 0.55,
+            delay: delay + LUNGE_MS * LUNGE_IMPACT,
+            easing: 'ease-out',
+          }),
+        );
       }
     });
   }, [lunges, trailDurations]);
 
   useEffect(() => {
-    const animations = running.current;
+    const trailAnimations = running.current;
+    const lungeAnimations = runningLunges.current;
     return () => {
-      for (const animation of animations.values()) animation.cancel();
-      animations.clear();
+      for (const animation of trailAnimations.values()) animation.cancel();
+      for (const animation of lungeAnimations) animation.cancel();
+      trailAnimations.clear();
+      lungeAnimations.clear();
     };
   }, []);
 
@@ -123,9 +137,9 @@ function start(
   element: SVGGElement,
   keyframes: Keyframe[],
   timing: KeyframeAnimationOptions,
-): void {
+): Animation {
   for (const running of element.getAnimations()) running.cancel();
-  element.animate(keyframes, { ...timing, fill: 'none' });
+  return element.animate(keyframes, { ...timing, fill: 'none' });
 }
 
 /** 出手方：冲过去撞一下再退回原位。 */

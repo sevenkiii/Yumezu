@@ -8,14 +8,13 @@ import { INITIAL_HAND_SIZE, MAX_HAND_SIZE, drawCard } from '../cards/CardPool';
 import { createCharacter } from '../characters/Character';
 import type { GameEvent } from '../core/Event';
 import type {
-  Deployment,
   DeploymentAssignment,
   GameResult,
   GameState,
   PlayerId,
   VertexId,
 } from '../core/GameState';
-import { CHARACTER_TYPE_IDS, PLAYER_IDS, aliveCharactersOf, opponentOf } from '../core/GameState';
+import { CHARACTER_TYPE_IDS, aliveCharactersOf } from '../core/GameState';
 import { shuffled } from '../core/RNG';
 
 /** 每方角色数量。 */
@@ -23,7 +22,7 @@ export const TEAM_SIZE = 3;
 
 /** 双方各自等概率随机获得 3 名互不相同的角色（允许双方抽到同名角色）。 */
 export function initialiseRoster(state: GameState, events: GameEvent[]): void {
-  for (const player of PLAYER_IDS) {
+  for (const player of state.seats) {
     const roll = shuffled(state.rng.roster, CHARACTER_TYPE_IDS);
     state.rng.roster = roll.next;
     const picks = roll.value.slice(0, TEAM_SIZE);
@@ -41,7 +40,7 @@ export function initialiseRoster(state: GameState, events: GameEvent[]): void {
  * 使用 gameSeed 的 deploy 子流，因此同一组种子必然得到完全相同的站位。
  */
 export function applyRandomDeployment(state: GameState, events: GameEvent[]): void {
-  for (const player of PLAYER_IDS) {
+  for (const player of state.seats) {
     const region = state.spawn[player].region.slice().sort((a, b) => a - b);
     if (region.length < TEAM_SIZE) {
       throw new Error('出生区域只有 ' + region.length + ' 个节点，放不下 ' + TEAM_SIZE + ' 名角色');
@@ -66,15 +65,17 @@ export function applyRandomDeployment(state: GameState, events: GameEvent[]): vo
   events.push({
     type: 'DEPLOY_REVEALED',
     deployment: {
-      P1: state.deployment.P1 as Deployment,
-      P2: state.deployment.P2 as Deployment,
+      P1: state.deployment.P1 ?? { assignments: [] },
+      P2: state.deployment.P2 ?? { assignments: [] },
+      P3: state.deployment.P3 ?? { assignments: [] },
+      P4: state.deployment.P4 ?? { assignments: [] },
     },
   });
 }
 
 /** 开局发牌：双方各 3 张。 */
 export function initialiseHands(state: GameState, events: GameEvent[]): void {
-  for (const player of PLAYER_IDS) {
+  for (const player of state.seats) {
     for (let i = 0; i < INITIAL_HAND_SIZE; i += 1) {
       const card = drawCard(state, player);
       events.push({
@@ -126,10 +127,19 @@ export function beginTurn(state: GameState, player: PlayerId, events: GameEvent[
   }
 }
 
-/** 回合结束：推进 turnIndex，把行动权交给对手并开始其回合。 */
+/** 回合结束：推进 turnIndex，把行动权交给下一个还有存活角色的座位。 */
 export function endTurn(state: GameState, events: GameEvent[]): void {
   state.turnIndex += 1;
-  const next = opponentOf(state.currentPlayer);
+  const order = state.seats;
+  const current = order.indexOf(state.currentPlayer);
+  let next = state.currentPlayer;
+  for (let step = 1; step <= order.length; step += 1) {
+    const candidate = order[(current + step) % order.length] as PlayerId;
+    if (aliveCharactersOf(state, candidate).length > 0) {
+      next = candidate;
+      break;
+    }
+  }
   state.currentPlayer = next;
   const limit = state.config.maxTurns;
   if (limit !== null && state.turnIndex >= limit) {
@@ -141,15 +151,13 @@ export function endTurn(state: GameState, events: GameEvent[]): void {
 
 /** 每次行动结算完成后检查胜负。 */
 export function checkGameEnd(state: GameState, events: GameEvent[]): void {
-  const aliveP1 = aliveCharactersOf(state, 'P1').length;
-  const aliveP2 = aliveCharactersOf(state, 'P2').length;
-  if (aliveP1 > 0 && aliveP2 > 0) return;
-  if (aliveP1 === 0 && aliveP2 === 0) {
+  const alive = state.seats.filter((player) => aliveCharactersOf(state, player).length > 0);
+  if (alive.length > 1) return;
+  if (alive.length === 0) {
     finishGame(state, { kind: 'DRAW', reason: 'MUTUAL_ANNIHILATION' }, events);
     return;
   }
-  const winner: PlayerId = aliveP1 > 0 ? 'P1' : 'P2';
-  finishGame(state, { kind: 'WIN', winner, reason: 'ANNIHILATION' }, events);
+  finishGame(state, { kind: 'WIN', winner: alive[0] as PlayerId, reason: 'ANNIHILATION' }, events);
 }
 
 export function finishGame(state: GameState, result: GameResult, events: GameEvent[]): void {

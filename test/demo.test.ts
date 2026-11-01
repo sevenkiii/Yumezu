@@ -1,5 +1,5 @@
 /**
- * 验收 demo：在没有 UI 的情况下，用代码完整跑完一局 3v3。
+ * 验收 demo：在没有 UI 的情况下，用代码完整跑完一局。
  *
  * 现在走的是正式入口：mapSeed → 随机平面图 + 出生点 → gameSeed → 完整对局。
  * 单独运行：npx vitest run test/demo.test.ts

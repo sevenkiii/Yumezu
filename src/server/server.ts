@@ -14,6 +14,7 @@ import { extname, join, normalize, resolve } from 'node:path';
 
 import { WebSocketServer, type WebSocket } from 'ws';
 
+import type { PlayerId } from '../core/GameState';
 import { createRoomRegistry, type Room, type RoomRegistry } from './Room';
 import {
   PROTOCOL_VERSION,
@@ -45,7 +46,7 @@ export interface GameServer {
 interface Connection {
   readonly socket: WebSocket;
   roomId: string | null;
-  seat: 'P1' | 'P2' | null;
+  seat: PlayerId | null;
   alive: boolean;
 }
 
@@ -88,14 +89,13 @@ export function createGameServer(options: GameServerOptions): GameServer {
     send(socket, { type: 'error', code, message });
   }
 
-  /** 把房间里的两份快照分别发下去。 */
+  /** 把每个座位各自的裁剪快照发下去。 */
   function broadcast(room: Room): void {
     const session = room.session;
     if (session === null) return;
-    const snapshots = new Map<'P1' | 'P2', RoomSnapshot>([
-      ['P1', session.snapshotFor('P1')],
-      ['P2', session.snapshotFor('P2')],
-    ]);
+    const snapshots = new Map<PlayerId, RoomSnapshot>(
+      room.seats.map((seat) => [seat.player, session.snapshotFor(seat.player)]),
+    );
     for (const connection of connections.values()) {
       if (connection.roomId !== room.id || connection.seat === null) continue;
       const snapshot = snapshots.get(connection.seat);
@@ -103,11 +103,23 @@ export function createGameServer(options: GameServerOptions): GameServer {
     }
   }
 
-  function broadcastPresence(room: Room): void {
+  function broadcastWaiting(room: Room): void {
     for (const connection of connections.values()) {
       if (connection.roomId !== room.id || connection.seat === null) continue;
-      const opponent = room.seats.find((seat) => seat.player !== connection.seat);
-      send(connection.socket, { type: 'presence', opponentOnline: opponent?.online ?? false });
+      send(connection.socket, {
+        type: 'waiting',
+        roomId: room.id,
+        joined: room.seats.length,
+        playerCount: room.playerCount,
+      });
+    }
+  }
+
+  function broadcastPresence(room: Room): void {
+    const online = room.seats.filter((seat) => seat.online).map((seat) => seat.player);
+    for (const connection of connections.values()) {
+      if (connection.roomId !== room.id || connection.seat === null) continue;
+      send(connection.socket, { type: 'presence', online });
     }
   }
 
@@ -124,9 +136,19 @@ export function createGameServer(options: GameServerOptions): GameServer {
       sendError(socket, 'BAD_MESSAGE', '房间号不能为空');
       return;
     }
-    const result = registry.join(roomId, message.token);
+    let result: ReturnType<RoomRegistry['join']>;
+    try {
+      result = registry.join(roomId, message.token, message.playerCount);
+    } catch {
+      sendError(socket, 'BAD_MESSAGE', '参战人数必须是 2 ~ 4 人');
+      return;
+    }
     if (!result.ok) {
-      sendError(socket, 'ROOM_FULL', '这个房间已经满了（最多两人）');
+      sendError(
+        socket,
+        result.code,
+        result.code === 'ROOM_FULL' ? '这个房间已经满了' : '房间人数配置不一致',
+      );
       return;
     }
     const connection = connections.get(socket);
@@ -134,20 +156,22 @@ export function createGameServer(options: GameServerOptions): GameServer {
       connection.roomId = roomId;
       connection.seat = result.seat;
     }
+    const room = result.room;
     send(socket, {
       type: 'welcome',
       roomId,
       seat: result.seat,
       token: result.token,
       reconnected: result.reconnected,
+      playerCount: room.playerCount,
     });
 
-    const room = result.room;
     if (room.session === null) {
-      send(socket, { type: 'waiting', roomId });
+      broadcastWaiting(room);
+      broadcastPresence(room);
       return;
     }
-    // 到齐了：两份快照都发一遍（第二个人进来时，先来的那位也要收到开局画面）
+    // 到齐了：所有座位都快照发一遍；最后一位加入时其他人也要收到开局画面
     broadcast(room);
     broadcastPresence(room);
   }

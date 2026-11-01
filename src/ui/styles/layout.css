@@ -125,8 +125,56 @@
 
   .top-bar__status {
     display: flex;
+    align-items: center;
     gap: 6px;
     flex: 0 0 auto;
+  }
+
+  .turn-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 28px;
+    padding: 3px 11px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .turn-indicator--self {
+    color: #ffffff;
+    background: var(--accent);
+    border-color: transparent;
+    box-shadow:
+      0 0 0 3px rgba(46, 111, 181, 0.14),
+      0 5px 14px rgba(46, 111, 181, 0.24);
+  }
+
+  .turn-indicator--other {
+    color: #87500f;
+    background: color-mix(in srgb, var(--warn) 14%, #ffffff);
+    border-color: color-mix(in srgb, var(--warn) 42%, transparent);
+  }
+
+  .turn-indicator__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 0 currentColor;
+    animation: turn-pulse 1.5s ease-out infinite;
+  }
+
+  @keyframes turn-pulse {
+    0% {
+      box-shadow: 0 0 0 0 currentColor;
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 6px transparent;
+    }
   }
 
   .top-bar__enemy {
@@ -170,9 +218,30 @@
   /* 不要给这里加 overflow：绝对定位的详情会被滚动容器裁掉 */
   .enemy-strip__list {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex: 1 1 auto;
     min-width: 0;
+  }
+
+  .enemy-strip__group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+  }
+
+  .enemy-strip__group--acting {
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+
+  .enemy-strip__owner {
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
   }
 
   .enemy-strip__item {

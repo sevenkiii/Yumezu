@@ -2,7 +2,7 @@
  * 客户端 ↔ 服务端的消息（JSON 文本）。
  *
  * 服务端权威：客户端只能提交 `Action`，收到的快照里 View 已经按座位裁剪过
- * （对手手牌、抽牌/弃牌记录都看不到，见 `src/core/View.ts`）。
+ * （其他人的手牌、抽牌/弃牌记录都看不到，见 `src/core/View.ts`）。
  */
 
 import type { Action } from '../core/Action';
@@ -17,6 +17,8 @@ export type ClientMessage =
       readonly type: 'hello';
       readonly version: number;
       readonly roomId: string;
+      /** 首次建房时指定；重连沿用房间原有配置。省略按 2 人。 */
+      readonly playerCount?: number;
       /** 上次拿到的重连凭据；第一次加入时为 null。 */
       readonly token: string | null;
     }
@@ -30,32 +32,44 @@ export interface RoomSnapshot {
   readonly view: PlayerView;
   /**
    * 只有轮到这位玩家时才是非空——里面含 `USE_CARD` 的手牌实例 id，
-   * 发给对手等于泄露手牌。
+   * 发给其他人等于泄露手牌。
    */
   readonly legalActions: readonly Action[];
   readonly finished: boolean;
   readonly stateHash: string;
   /** 单调递增：客户端用它判断"来了新的一手"（0 表示刚连上，不播动画）。 */
   readonly eventSeq: number;
-  /** 种子 + 行动序列，可用于复盘或断线重连。 */
+  /** 种子 + 行动序列；对局进行中为空，结束后才下发完整复盘记录。 */
   readonly record: string;
 }
 
 export type ServerErrorCode =
-  'BAD_MESSAGE' | 'BAD_VERSION' | 'ROOM_FULL' | 'NOT_YOUR_TURN' | 'ILLEGAL_ACTION' | 'FINISHED';
+  | 'BAD_MESSAGE'
+  | 'BAD_VERSION'
+  | 'ROOM_FULL'
+  | 'ROOM_CONFIG'
+  | 'NOT_YOUR_TURN'
+  | 'ILLEGAL_ACTION'
+  | 'FINISHED';
 
 export type ServerMessage =
   | {
       readonly type: 'welcome';
       readonly roomId: string;
       readonly seat: PlayerId;
+      readonly playerCount: number;
       /** 存下来，断线回来时带上它就能坐回原位。 */
       readonly token: string;
       readonly reconnected: boolean;
     }
-  /** 还没凑齐两名玩家。 */
-  | { readonly type: 'waiting'; readonly roomId: string }
+  /** 还没凑齐目标人数。 */
+  | {
+      readonly type: 'waiting';
+      readonly roomId: string;
+      readonly joined: number;
+      readonly playerCount: number;
+    }
   | { readonly type: 'snapshot'; readonly snapshot: RoomSnapshot }
-  | { readonly type: 'presence'; readonly opponentOnline: boolean }
+  | { readonly type: 'presence'; readonly online: readonly PlayerId[] }
   | { readonly type: 'error'; readonly code: ServerErrorCode; readonly message: string }
   | { readonly type: 'pong' };

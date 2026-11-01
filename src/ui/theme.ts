@@ -37,6 +37,8 @@ export const BOARD_SIZES = {
 export const PLAYER_COLORS: Record<PlayerId, string> = {
   P1: '#ff9f7a',
   P2: '#7fd1ff',
+  P3: '#9bd99b',
+  P4: '#d5a7e8',
 };
 
 /**
@@ -48,6 +50,8 @@ export const PLAYER_COLORS: Record<PlayerId, string> = {
 export const PLAYER_INKS: Record<PlayerId, string> = {
   P1: '#c2563a',
   P2: '#2a6db0',
+  P3: '#3d7a45',
+  P4: '#7b4a91',
 };
 
 export const STATUS_COLORS: Record<StatusType, string> = {

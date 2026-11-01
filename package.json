@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "夢図（Yumezu）— 基于はるまきごはん世界观的 1v1 回合制网页同人游戏",
+  "description": "夢図（Yumezu）— 基于はるまきごはん世界观的 2~4 人回合制网页混战游戏",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22.13.1"

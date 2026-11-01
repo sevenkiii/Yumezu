@@ -6,7 +6,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { createGame, getLegalActions } from '../src/core/GameEngine';
+import { createGame, createGameFromSeed, getLegalActions } from '../src/core/GameEngine';
 import { findCharacter } from '../src/core/GameState';
 import { getViewFor } from '../src/core/View';
 import { PHASE1_MAP, PHASE1_SPAWN_CENTERS } from '../src/map/fixtures';
@@ -19,6 +19,7 @@ import { MapView } from '../src/ui/components/MapView';
 import { EnemyStrip } from '../src/ui/components/EnemyStrip';
 import { HpAvatar } from '../src/ui/components/HpAvatar';
 import { ResultOverlay } from '../src/ui/components/ResultOverlay';
+import { playerLabel } from '../src/ui/formatEvent';
 import { getText } from '../src/ui/i18n';
 import {
   INITIAL_UI_STATE,
@@ -59,14 +60,22 @@ describe('界面渲染冒烟测试', () => {
     const html = renderToStaticMarkup(<App />);
     expect(html).toContain(text.app.title);
     expect(html).toContain(text.newGame.start);
+    expect(html).toContain(text.online.create);
+    expect(html).toContain(text.online.join);
+    expect(html).toContain(text.newGame.playerCountOption(2));
+    expect(html).toContain(text.newGame.playerCountOption(3));
+    expect(html).toContain(text.newGame.playerCountOption(4));
   });
 
   it('对局界面能渲染（本地 transport 直接喂给 GameScreen）', () => {
     const transport = createLocalTransport({ mapSeed: 'render-map', gameSeed: 'render-game' });
     const html = renderToStaticMarkup(<GameScreen transport={transport} text={text} />);
+    const currentPlayer = transport.getSnapshot().view.currentPlayer;
     expect(html).toContain('class="map');
     expect(html).toContain('char-card--full');
     expect(html).toContain('enemy-strip');
+    expect(html).toContain('turn-indicator--self');
+    expect(html).toContain(text.format.yourTurn(playerLabel(currentPlayer, text)));
   });
 
   it('地图渲染节点、立绘与高亮', () => {
@@ -121,6 +130,21 @@ describe('界面渲染冒烟测试', () => {
     expect(html).toContain('hp-avatar__value');
     // 默认不展开：详情面板要点头像才出现
     expect(html).not.toContain('enemy-strip__detail');
+  });
+
+  it('四人局按玩家分组渲染另外三家的全部头像', () => {
+    const state = createGameFromSeed({
+      mapSeed: 'render-four-map',
+      gameSeed: 'render-four-game',
+      playerCount: 4,
+    });
+    const html = renderToStaticMarkup(
+      <EnemyStrip view={getViewFor(state, 'P1')} text={text} title={text.panel.enemyTeam} />,
+    );
+    expect(html).toContain(text.player.p2);
+    expect(html).toContain(text.player.p3);
+    expect(html).toContain(text.player.p4);
+    expect(html.match(/<button[^>]*class="hp-avatar(?: |")/g)).toHaveLength(9);
   });
 
   it('头像环按剩余血量的比例画弧（满血一圈、空血不画）', () => {

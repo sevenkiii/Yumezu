@@ -6,32 +6,44 @@
 
 import { useState } from 'react';
 
+import type { PlayerCount } from '../../core/GameState';
 import type { UiText } from '../i18n';
 import { defaultServerUrl, type RemoteStatus } from '../transport-remote';
 
 export interface OnlineRoomProps {
   readonly text: UiText;
   readonly roomId: string;
+  readonly playerCount: PlayerCount;
+  readonly joinedCount: number;
   readonly serverUrl: string;
   readonly status: RemoteStatus;
   readonly onLeave: () => void;
 }
 
 /** 邀请链接：把页面地址原样带上房间号；跨机时人只要点开就能连上同一台服务器。 */
-export function inviteLinkFor(roomId: string, serverUrl: string): string {
+export function inviteLinkFor(roomId: string, playerCount: PlayerCount, serverUrl: string): string {
   if (typeof location === 'undefined') return '';
   const url = new URL(location.href);
   url.search = '';
   url.searchParams.set('room', roomId);
+  url.searchParams.set('players', String(playerCount));
   // 只有在连"别的服务器"（?server= 覆盖过）时才需要把地址写进链接
   if (serverUrl !== defaultServerUrl()) url.searchParams.set('server', serverUrl);
   return url.toString();
 }
 
-export function OnlineRoom({ text, roomId, serverUrl, status, onLeave }: OnlineRoomProps) {
+export function OnlineRoom({
+  text,
+  roomId,
+  playerCount,
+  joinedCount,
+  serverUrl,
+  status,
+  onLeave,
+}: OnlineRoomProps) {
   const [copied, setCopied] = useState(false);
   const labels = text.online;
-  const link = inviteLinkFor(roomId, serverUrl);
+  const link = inviteLinkFor(roomId, playerCount, serverUrl);
   const statusText =
     status === 'closed' ? labels.closed : status === 'waiting' ? labels.waiting : labels.connecting;
 
@@ -50,6 +62,7 @@ export function OnlineRoom({ text, roomId, serverUrl, status, onLeave }: OnlineR
       <section className="new-game online-room">
         <h1 className="new-game__title">{labels.title}</h1>
         <p className="new-game__subtitle">{statusText}</p>
+        <p className="new-game__hint">{labels.roomPlayers(joinedCount, playerCount)}</p>
         <p className="online-room__room">
           <span className="online-room__label">{labels.roomLabel}</span>
           <strong className="online-room__code">{roomId}</strong>

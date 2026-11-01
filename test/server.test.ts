@@ -31,6 +31,18 @@ function joinTwo(rooms: RoomRegistry, roomId = 'room-1') {
   return { room, session, first, second };
 }
 
+function joinMany(rooms: RoomRegistry, playerCount: 3 | 4, roomId: string) {
+  const joins = Array.from({ length: playerCount }, () => rooms.join(roomId, null, playerCount));
+  for (const join of joins) {
+    if (!join.ok) throw new Error('加入失败');
+  }
+  const first = joins[0];
+  if (first === undefined || !first.ok) throw new Error('加入失败');
+  const session = first.room.session;
+  if (session === null) throw new Error(playerCount + ' 人到齐就该开局');
+  return { room: first.room, session, joins };
+}
+
 /** 现在轮到谁。 */
 function actingPlayer(session: ReturnType<typeof joinTwo>['session']): PlayerId {
   return session.snapshotFor('P1').view.currentPlayer;
@@ -46,6 +58,50 @@ describe('房间与权威对局', () => {
     expect(room.session).not.toBeNull();
     expect(rooms.join('room-1', null)).toEqual({ ok: false, code: 'ROOM_FULL' });
     expect(rooms.join('room-2', null).ok).toBe(true);
+  });
+
+  it('三人 / 四人房间等目标人数到齐后才开局，并按顺序分配座位', () => {
+    const rooms = registry();
+    const first = rooms.join('three', null, 3);
+    const second = rooms.join('three', null, 3);
+    if (!first.ok || !second.ok) throw new Error('加入失败');
+    expect(first.seat).toBe('P1');
+    expect(second.seat).toBe('P2');
+    expect(first.room.session).toBeNull();
+
+    const third = rooms.join('three', null, 3);
+    if (!third.ok) throw new Error('加入失败');
+    expect(third.seat).toBe('P3');
+    expect(third.room.session).not.toBeNull();
+    expect(third.room.session?.snapshotFor('P3').view.seats).toEqual(['P1', 'P2', 'P3']);
+
+    const four = joinMany(rooms, 4, 'four');
+    expect(four.joins.map((join) => (join.ok ? join.seat : null))).toEqual([
+      'P1',
+      'P2',
+      'P3',
+      'P4',
+    ]);
+    expect(rooms.join('four', null, 4)).toEqual({ ok: false, code: 'ROOM_FULL' });
+  });
+
+  it('同一房间的人数配置不能中途改变', () => {
+    const rooms = registry();
+    expect(rooms.join('config', null, 3).ok).toBe(true);
+    expect(rooms.join('config', null, 2)).toEqual({ ok: false, code: 'ROOM_CONFIG' });
+  });
+
+  it('四人房间的重连凭据可以坐回原位', () => {
+    const rooms = registry();
+    const { joins } = joinMany(rooms, 4, 'reconnect-four');
+    const host = joins[0];
+    if (host === undefined || !host.ok) throw new Error('加入失败');
+    rooms.setOnline('reconnect-four', host.seat, false);
+    const again = rooms.join('reconnect-four', host.token);
+    expect(again.ok).toBe(true);
+    if (!again.ok) return;
+    expect(again.seat).toBe('P1');
+    expect(again.reconnected).toBe(true);
   });
 
   it('只有轮到的人能提交行动', () => {
@@ -68,6 +124,8 @@ describe('房间与权威对局', () => {
 
   it('视图里看不到对手的手牌与抽牌记录', () => {
     const { session } = joinTwo(registry());
+    expect(session.snapshotFor('P1').record).toBe('');
+    expect(session.snapshotFor('P2').record).toBe('');
     const acting = actingPlayer(session);
     const action = session.snapshotFor(acting).legalActions[0] as Action;
     session.submit(acting, action);
@@ -130,5 +188,7 @@ describe('房间与权威对局', () => {
     expect(p1.stateHash).toBe(p2.stateHash);
     expect(p1.legalActions).toEqual([]);
     expect(p2.legalActions).toEqual([]);
+    expect(p1.record).not.toBe('');
+    expect(p1.record).toBe(p2.record);
   });
 });

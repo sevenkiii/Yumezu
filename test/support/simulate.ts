@@ -155,6 +155,8 @@ export function simulateGame(index: number, options: SimulationOptions): GameOut
   const openingHands: Record<PlayerId, CardId[]> = {
     P1: state.players.P1.hand.map((card) => card.cardId),
     P2: state.players.P2.hand.map((card) => card.cardId),
+    P3: state.players.P3.hand.map((card) => card.cardId),
+    P4: state.players.P4.hand.map((card) => card.cardId),
   };
 
   const log = playGame(state, createRandomAgent(agentSeed), options.maxTurns * 4 + 200);
@@ -195,10 +197,17 @@ export function simulateGame(index: number, options: SimulationOptions): GameOut
     turns: finalState.turnIndex,
     actions: log.actionCount,
     firstPlayer: finalState.firstPlayer,
-    roster: { P1: finalState.roster.P1.slice(), P2: finalState.roster.P2.slice() },
+    roster: {
+      P1: finalState.roster.P1.slice(),
+      P2: finalState.roster.P2.slice(),
+      P3: finalState.roster.P3.slice(),
+      P4: finalState.roster.P4.slice(),
+    },
     survivors: {
       P1: finalState.characters.filter((c) => c.owner === 'P1' && c.alive).length,
       P2: finalState.characters.filter((c) => c.owner === 'P2' && c.alive).length,
+      P3: finalState.characters.filter((c) => c.owner === 'P3' && c.alive).length,
+      P4: finalState.characters.filter((c) => c.owner === 'P4' && c.alive).length,
     },
     skillUses,
     cardsDrawn,
@@ -271,6 +280,8 @@ function summarise(games: readonly GameOutcome[]): {
     meanSurvivors: {
       P1: mean(games.map((game) => game.survivors.P1)),
       P2: mean(games.map((game) => game.survivors.P2)),
+      P3: mean(games.map((game) => game.survivors.P3)),
+      P4: mean(games.map((game) => game.survivors.P4)),
     },
   };
 

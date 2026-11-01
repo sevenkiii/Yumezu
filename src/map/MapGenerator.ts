@@ -105,6 +105,7 @@ export function describeFailures(failures: Readonly<Record<string, number>>): st
 export function generateMap(
   mapSeed: string,
   overrides: Partial<MapGenerationParams> = {},
+  playerCount = 2,
 ): GeneratedMap {
   const params: MapGenerationParams = { ...DEFAULT_MAP_PARAMS, ...overrides };
   const streams = createMapRngStreams(mapSeed);
@@ -130,7 +131,7 @@ export function generateMap(
       continue;
     }
 
-    const selection = selectSpawnCenters(graph, spawn, params);
+    const selection = selectSpawnCenters(graph, spawn, params, playerCount);
     if (selection === null) {
       record('NO_VALID_SPAWN');
       continue;

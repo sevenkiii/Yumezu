@@ -4,16 +4,16 @@
 
 ## 文件
 
-| 文件 | 职责 |
-|---|---|
-| `GameState.ts` | `GameState` 与子结构（角色、手牌、状态、陷阱、封锁边、结果） |
+| 文件            | 职责                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `GameState.ts`  | `GameState` 与子结构（角色、手牌、状态、陷阱、封锁边、结果）                                   |
 | `GameEngine.ts` | `createGame` / `validateAction` / `applyAction` / `getLegalActions`，即 S(t+1) = F(S(t), A(t)) |
-| `Action.ts` | 行动类型：`MOVE` / `ATTACK` / `USE_SKILL` / `USE_CARD` / `DEPLOY` / `PASS` / `DISCARD` |
-| `Effect.ts` | 统一效果系统的类型定义（伤害来源、位移原因等） |
-| `Event.ts` | 事件类型：Action Log、调试与 UI 表现都读它 |
-| `RNG.ts` | `mulberry32` + 命名子流，保证同 seed 完全可复现 |
-| `View.ts` | `getViewFor(state, viewer)`：按玩家裁剪视图（隐藏对手手牌） |
-| `hash.ts` | 键序稳定的序列化与 `hashState`，用于黄金测试与联机校验 |
+| `Action.ts`     | 行动类型：`MOVE` / `ATTACK` / `USE_SKILL` / `USE_CARD` / `DEPLOY` / `PASS` / `DISCARD`         |
+| `Effect.ts`     | 统一效果系统的类型定义（伤害来源、位移原因等）                                                 |
+| `Event.ts`      | 事件类型：Action Log、调试与 UI 表现都读它                                                     |
+| `RNG.ts`        | `mulberry32` + 命名子流，保证同 seed 完全可复现                                                |
+| `View.ts`       | `getViewFor(state, viewer)`：按玩家裁剪视图（只返回自己的手牌，其他人的手牌仅数量）            |
+| `hash.ts`       | 键序稳定的序列化与 `hashState`，用于黄金测试与联机校验                                         |
 
 ## 关键约定
 

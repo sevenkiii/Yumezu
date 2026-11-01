@@ -59,6 +59,19 @@
       height: 38px;
     }
 
+    .enemy-strip__list {
+      gap: 4px;
+    }
+
+    .enemy-strip__group {
+      gap: 1px;
+      padding: 1px;
+    }
+
+    .enemy-strip__owner {
+      display: none;
+    }
+
     /* 手机上没有"挂在头像下面"的余地：详情改成底部浮层（和右侧栏同一套做法） */
     .enemy-strip__detail {
       position: fixed;
@@ -225,6 +238,12 @@
       --pull: calc(-1 * var(--fan-peek, 0px) - 10px);
       transform: translateY(calc(var(--lift, 0px) + var(--pull))) rotate(0deg) scale(1.03);
       z-index: 60 !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .turn-indicator__dot {
+      animation: none;
     }
   }
 }

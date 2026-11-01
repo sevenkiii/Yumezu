@@ -10,7 +10,7 @@ import type { PlayerView } from '../core/View';
 import type { UiText } from './i18n';
 
 export function playerLabel(player: PlayerId, t: UiText): string {
-  return player === 'P1' ? t.player.p1 : t.player.p2;
+  return t.player[player.toLowerCase() as 'p1' | 'p2' | 'p3' | 'p4'];
 }
 
 export function characterLabel(view: PlayerView, id: CharacterId, t: UiText): string {

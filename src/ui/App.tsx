@@ -13,10 +13,12 @@ import type {
   CardId,
   CharacterId,
   EdgeKey,
+  PlayerCount,
   PlayerId,
   StatusType,
   VertexId,
 } from '../core/GameState';
+import { PLAYER_COUNTS } from '../core/GameState';
 import type { GameEvent } from '../core/Event';
 import { ActionLogPanel } from './components/ActionLogPanel';
 import { CharacterCard } from './components/CharacterCard';
@@ -64,7 +66,8 @@ export interface GameScreenProps {
   readonly text: UiText;
   readonly remote?: {
     readonly status: RemoteStatus;
-    readonly opponentOnline: boolean;
+    readonly onlinePlayers: readonly PlayerId[];
+    readonly playerCount: PlayerCount;
     readonly seat: PlayerId | null;
   };
 }
@@ -109,6 +112,7 @@ export function GameScreen({ transport, text, remote }: GameScreenProps) {
   );
   const selectedCharacterId = ui.selectedCharacterId;
   const yourTurn = view.currentPlayer === view.viewer && !snapshot.finished;
+  const everyoneOnline = remote !== undefined && remote.onlinePlayers.length >= remote.playerCount;
 
   // 状态变了（有人真的行动过）才清空 UI 选中态。
   // 注意：不能在挂载时无条件执行 —— StrictMode 会把 effect 跑两遍，
@@ -240,15 +244,22 @@ export function GameScreen({ transport, text, remote }: GameScreenProps) {
         <div className="top-bar__status">
           <span className="chip">{text.phase[view.phase]}</span>
           <span className="chip">{text.format.turn(view.turnIndex)}</span>
-          <span className={yourTurn ? 'chip chip--ready' : 'chip'}>
-            {yourTurn ? text.player.currentTurn : text.player.waiting}
+          <span
+            className={
+              'turn-indicator' + (yourTurn ? ' turn-indicator--self' : ' turn-indicator--other')
+            }
+          >
+            <span className="turn-indicator__dot" aria-hidden="true" />
+            {yourTurn
+              ? text.format.yourTurn(playerLabel(view.currentPlayer, text))
+              : text.format.currentPlayer(playerLabel(view.currentPlayer, text))}
           </span>
           {replaying ? <span className="chip chip--replay">{text.panel.replaying}</span> : null}
           {remote === undefined ? null : (
             <>
               <span className="chip">{text.online.title}</span>
-              <span className={remote.opponentOnline ? 'chip chip--ready' : 'chip'}>
-                {remote.opponentOnline ? text.online.opponentOnline : text.online.opponentOffline}
+              <span className={everyoneOnline ? 'chip chip--ready' : 'chip'}>
+                {text.online.onlinePlayers(remote.onlinePlayers.length, remote.playerCount)}
               </span>
               {remote.status === 'closed' ? (
                 <span className="chip chip--replay">{text.online.closed}</span>
@@ -359,8 +370,13 @@ export function GameScreen({ transport, text, remote }: GameScreenProps) {
           ) : null}
 
           {bannerKey > 0 && !snapshot.finished ? (
-            <div key={bannerKey} className="turn-banner">
-              {yourTurn ? text.player.currentTurn : text.player.waiting}
+            <div
+              key={bannerKey}
+              className={'turn-banner' + (yourTurn ? ' turn-banner--self' : ' turn-banner--other')}
+            >
+              {yourTurn
+                ? text.format.yourTurn(playerLabel(view.currentPlayer, text))
+                : text.format.currentPlayer(playerLabel(view.currentPlayer, text))}
             </div>
           ) : null}
 
@@ -391,20 +407,16 @@ export function GameScreen({ transport, text, remote }: GameScreenProps) {
                 <button type="button" className="ghost" onClick={() => transport.setViewer(null)}>
                   {text.dev.followTurn}
                 </button>
-                <button
-                  type="button"
-                  className="ghost"
-                  onClick={() => transport.setViewer('P1' as PlayerId)}
-                >
-                  {text.player.p1}
-                </button>
-                <button
-                  type="button"
-                  className="ghost"
-                  onClick={() => transport.setViewer('P2' as PlayerId)}
-                >
-                  {text.player.p2}
-                </button>
+                {view.seats.map((player) => (
+                  <button
+                    key={player}
+                    type="button"
+                    className="ghost"
+                    onClick={() => transport.setViewer(player)}
+                  >
+                    {playerLabel(player, text)}
+                  </button>
+                ))}
               </div>
               <div className="dev-panel__row">
                 <button
@@ -470,6 +482,9 @@ export function App() {
     [],
   );
   const [roomId, setRoomId] = useState<string | null>(() => urlParams.get('room'));
+  const [roomPlayerCount, setRoomPlayerCount] = useState<PlayerCount>(() =>
+    parsePlayerCount(urlParams.get('players')),
+  );
   const serverUrl = useMemo(() => urlParams.get('server') ?? defaultServerUrl(), [urlParams]);
 
   if (roomId !== null) {
@@ -477,12 +492,27 @@ export function App() {
       <RemoteSession
         text={text}
         roomId={roomId}
+        playerCount={roomPlayerCount}
         serverUrl={serverUrl}
         onLeave={() => setRoomId(null)}
       />
     );
   }
-  return <LocalSession text={text} urlParams={urlParams} onJoinRoom={setRoomId} />;
+  return (
+    <LocalSession
+      text={text}
+      urlParams={urlParams}
+      onJoinRoom={(nextRoomId, playerCount) => {
+        setRoomId(nextRoomId);
+        setRoomPlayerCount(playerCount);
+      }}
+    />
+  );
+}
+
+function parsePlayerCount(value: string | null): PlayerCount {
+  const parsed = Number(value ?? 2);
+  return PLAYER_COUNTS.find((count) => count === parsed) ?? 2;
 }
 
 /** 本地对局：先开局界面，点了开始才是对局界面。 */
@@ -493,12 +523,13 @@ function LocalSession({
 }: {
   readonly text: UiText;
   readonly urlParams: URLSearchParams;
-  readonly onJoinRoom: (roomId: string) => void;
+  readonly onJoinRoom: (roomId: string, playerCount: PlayerCount) => void;
 }) {
   const [transport] = useState(() =>
     createLocalTransport({
       mapSeed: urlParams.get('mapSeed') ?? 'dream-1',
       gameSeed: urlParams.get('gameSeed') ?? 'game-1',
+      playerCount: parsePlayerCount(urlParams.get('players')),
       maxTurns:
         urlParams.get('maxTurns') === null ? null : Number(urlParams.get('maxTurns') as string),
     }),
@@ -510,8 +541,8 @@ function LocalSession({
       <div className="app app--start">
         <NewGameScreen
           text={text}
-          onStart={(mapSeed, gameSeed) => {
-            transport.startNewGame({ mapSeed, gameSeed });
+          onStart={(mapSeed, gameSeed, playerCount) => {
+            transport.startNewGame({ mapSeed, gameSeed, playerCount });
             setStarted(true);
           }}
           onJoin={onJoinRoom}
@@ -526,27 +557,33 @@ function LocalSession({
 function RemoteSession({
   text,
   roomId,
+  playerCount,
   serverUrl,
   onLeave,
 }: {
   readonly text: UiText;
   readonly roomId: string;
+  readonly playerCount: PlayerCount;
   readonly serverUrl: string;
   readonly onLeave: () => void;
 }) {
   const [transport, setTransport] = useState<GameTransport | null>(null);
   const [status, setStatus] = useState<RemoteStatus>('connecting');
-  const [opponentOnline, setOpponentOnline] = useState(false);
+  const [onlinePlayers, setOnlinePlayers] = useState<readonly PlayerId[]>([]);
+  const [joinedCount, setJoinedCount] = useState(0);
+  const [actualPlayerCount, setActualPlayerCount] = useState<PlayerCount>(playerCount);
   const [seat, setSeat] = useState<PlayerId | null>(null);
 
   useEffect(() => {
     // 连接由这个 effect 自己拥有：StrictMode 重跑时旧的会被干净地关掉，不会串味
-    const join = connectRemote({ url: serverUrl, roomId });
+    const join = connectRemote({ url: serverUrl, roomId, playerCount });
     let alive = true;
     const sync = (): void => {
       if (!alive) return;
       setStatus(join.status);
-      setOpponentOnline(join.opponentOnline);
+      setOnlinePlayers(join.onlinePlayers);
+      setJoinedCount(join.joinedCount);
+      setActualPlayerCount(parsePlayerCount(String(join.playerCount)));
       setSeat(join.seat);
     };
     const unsubscribe = join.subscribe(sync);
@@ -559,18 +596,26 @@ function RemoteSession({
       unsubscribe();
       join.close();
     };
-  }, [serverUrl, roomId]);
+  }, [serverUrl, roomId, playerCount]);
 
   if (transport === null) {
     return (
       <OnlineRoom
         text={text}
         roomId={roomId}
+        playerCount={actualPlayerCount}
+        joinedCount={joinedCount}
         serverUrl={serverUrl}
         status={status}
         onLeave={onLeave}
       />
     );
   }
-  return <GameScreen transport={transport} text={text} remote={{ status, opponentOnline, seat }} />;
+  return (
+    <GameScreen
+      transport={transport}
+      text={text}
+      remote={{ status, onlinePlayers, playerCount: actualPlayerCount, seat }}
+    />
+  );
 }

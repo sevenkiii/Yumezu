@@ -40,7 +40,8 @@
     font-size: 13px;
   }
 
-  .new-game__field input {
+  .new-game__field input,
+  .new-game__field select {
     font: inherit;
     color: var(--text);
     min-height: 44px;
@@ -48,6 +49,34 @@
     background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 10px;
+  }
+
+  .new-game__choices {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .new-game__choice {
+    min-height: 42px;
+    color: var(--text-soft);
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 700;
+  }
+
+  .new-game__choice--selected {
+    color: #ffffff;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .new-game__choice--selected:hover:not(:disabled) {
+    color: #ffffff;
+    background: color-mix(in srgb, var(--accent) 84%, #102a4c);
+    border-color: color-mix(in srgb, var(--accent) 72%, #102a4c);
   }
 
   .new-game__hint {
@@ -60,6 +89,25 @@
     display: flex;
     gap: 10px;
     justify-content: flex-end;
+  }
+
+  .new-game__wide {
+    width: 100%;
+  }
+
+  .new-game__divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .new-game__divider::before,
+  .new-game__divider::after {
+    content: '';
+    flex: 1 1 auto;
+    border-top: 1px dashed rgba(34, 48, 74, 0.16);
   }
 
   /* ---------- 开局界面里的联机入口 ---------- */

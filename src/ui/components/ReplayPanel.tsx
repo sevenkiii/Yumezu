@@ -24,7 +24,8 @@ export interface ReplayPanelProps {
   readonly readOnly?: boolean;
   readonly onLoad: (record: string) => boolean;
   readonly onStop: () => void;
-  readonly onStep: () => void;
+  /** 前进一步并返回是否真的推进了；false 会让自动播放停止。 */
+  readonly onStep: () => boolean;
   readonly onBack: () => void;
 }
 
@@ -58,7 +59,9 @@ export function ReplayPanel({
 
   useEffect(() => {
     if (!playing || !inReplay) return;
-    const timer = setInterval(() => stepRef.current(), PLAY_INTERVAL_MS);
+    const timer = setInterval(() => {
+      if (!stepRef.current()) setPlaying(false);
+    }, PLAY_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [playing, inReplay]);
 

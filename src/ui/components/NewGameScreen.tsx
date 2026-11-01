@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 
+import type { PlayerCount } from '../../core/GameState';
+import { PLAYER_COUNTS } from '../../core/GameState';
 import type { UiText } from '../i18n';
 
 export interface NewGameScreenProps {
   readonly text: UiText;
-  readonly onStart: (mapSeed: string, gameSeed: string) => void;
+  readonly onStart: (mapSeed: string, gameSeed: string, playerCount: PlayerCount) => void;
   /** 进入联机房间（服务端会另定种子）。 */
-  readonly onJoin: (roomId: string) => void;
+  readonly onJoin: (roomId: string, playerCount: PlayerCount) => void;
 }
 
 /** 房间号：短、好念、去掉容易看混的字母。 */
@@ -24,7 +26,8 @@ function randomRoomCode(): string {
 export function NewGameScreen({ text, onStart, onJoin }: NewGameScreenProps) {
   const [mapSeed, setMapSeed] = useState('dream-1');
   const [gameSeed, setGameSeed] = useState('game-1');
-  const [roomId, setRoomId] = useState(randomRoomCode);
+  const [roomId, setRoomId] = useState('');
+  const [playerCount, setPlayerCount] = useState<PlayerCount>(2);
 
   return (
     <div className="new-game">
@@ -38,6 +41,26 @@ export function NewGameScreen({ text, onStart, onJoin }: NewGameScreenProps) {
         <span>{text.newGame.gameSeed}</span>
         <input value={gameSeed} onChange={(event) => setGameSeed(event.target.value)} />
       </label>
+      <div className="new-game__field">
+        <span>{text.newGame.playerCount}</span>
+        <div className="new-game__choices" role="group" aria-label={text.newGame.playerCount}>
+          {PLAYER_COUNTS.map((count) => (
+            <button
+              key={count}
+              type="button"
+              className={
+                count === playerCount
+                  ? 'new-game__choice new-game__choice--selected'
+                  : 'new-game__choice'
+              }
+              aria-pressed={count === playerCount}
+              onClick={() => setPlayerCount(count)}
+            >
+              {text.newGame.playerCountOption(count)}
+            </button>
+          ))}
+        </div>
+      </div>
       <p className="new-game__hint">{text.newGame.hint}</p>
       <div className="new-game__buttons">
         <button
@@ -58,6 +81,7 @@ export function NewGameScreen({ text, onStart, onJoin }: NewGameScreenProps) {
             onStart(
               mapSeed.trim() === '' ? 'dream-1' : mapSeed.trim(),
               gameSeed.trim() === '' ? 'game-1' : gameSeed.trim(),
+              playerCount,
             )
           }
         >
@@ -67,6 +91,17 @@ export function NewGameScreen({ text, onStart, onJoin }: NewGameScreenProps) {
 
       <div className="new-game__online">
         <h2 className="new-game__section">{text.online.title}</h2>
+        <button
+          type="button"
+          className="primary new-game__wide"
+          onClick={() => onJoin(randomRoomCode(), playerCount)}
+        >
+          {text.online.create}
+        </button>
+        <p className="new-game__hint">{text.online.createHint}</p>
+        <div className="new-game__divider">
+          <span>{text.online.or}</span>
+        </div>
         <label className="new-game__field">
           <span>{text.online.roomLabel}</span>
           <input
@@ -75,13 +110,13 @@ export function NewGameScreen({ text, onStart, onJoin }: NewGameScreenProps) {
             onChange={(event) => setRoomId(event.target.value.toUpperCase())}
           />
         </label>
-        <p className="new-game__hint">{text.online.hint}</p>
+        <p className="new-game__hint">{text.online.joinHint}</p>
         <div className="new-game__buttons">
           <button
             type="button"
             className="primary"
             disabled={roomId.trim() === ''}
-            onClick={() => onJoin(roomId.trim())}
+            onClick={() => onJoin(roomId.trim(), playerCount)}
           >
             {text.online.join}
           </button>

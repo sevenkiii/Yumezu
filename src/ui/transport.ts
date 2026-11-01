@@ -49,6 +49,8 @@ export interface GameSnapshot {
 export interface NewGameOptions {
   readonly mapSeed: string;
   readonly gameSeed: string;
+  /** 参战人数（2 ~ 4，默认 2）。 */
+  readonly playerCount?: number;
   readonly maxTurns?: number | null;
 }
 
@@ -64,7 +66,8 @@ export interface GameTransport {
   /** 载入一段记录并从头开始回放；文本不合法时返回 false。 */
   loadRecord(text: string): boolean;
   /** 回放：前进一步 / 后退一步（不在回放时什么都不做）。 */
-  replayStep(): void;
+  /** 前进一步；已经到结尾或记录无法继续时返回 false。 */
+  replayStep(): boolean;
   replayBack(): void;
   /** 结束回放：停在当前画面，把这一局变回可以正常操作的当前局面。 */
   stopReplay(): void;
@@ -79,6 +82,7 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
   let state: GameState = createGameFromSeed({
     mapSeed: options.mapSeed,
     gameSeed: options.gameSeed,
+    playerCount: options.playerCount ?? 2,
     maxTurns: options.maxTurns ?? null,
   });
   let viewer: PlayerId | null = options.viewer ?? null;
@@ -87,6 +91,7 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
   let seeds = {
     mapSeed: options.mapSeed,
     gameSeed: options.gameSeed,
+    playerCount: options.playerCount ?? 2,
     maxTurns: options.maxTurns ?? null,
   };
   /** 非 null 表示正在按一份记录回放。 */
@@ -105,6 +110,7 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
       version: 1,
       mapSeed: seeds.mapSeed,
       gameSeed: seeds.gameSeed,
+      playerCount: seeds.playerCount,
       maxTurns: seeds.maxTurns,
       actions: history.slice(),
     };
@@ -167,11 +173,13 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
     seeds = {
       mapSeed: next.mapSeed,
       gameSeed: next.gameSeed,
+      playerCount: next.playerCount ?? 2,
       maxTurns: next.maxTurns ?? null,
     };
     state = createGameFromSeed({
       mapSeed: next.mapSeed,
       gameSeed: next.gameSeed,
+      playerCount: next.playerCount ?? 2,
       maxTurns: next.maxTurns ?? null,
     });
     lastEvents = [];
@@ -187,11 +195,13 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
     seeds = {
       mapSeed: record.mapSeed,
       gameSeed: record.gameSeed,
+      playerCount: record.playerCount,
       maxTurns: record.maxTurns,
     };
     state = createGameFromSeed({
       mapSeed: record.mapSeed,
       gameSeed: record.gameSeed,
+      playerCount: record.playerCount,
       maxTurns: record.maxTurns,
     });
     replay = { record, step: 0 };
@@ -201,16 +211,17 @@ export function createLocalTransport(options: LocalTransportOptions): GameTransp
     return true;
   }
 
-  function replayStep(): void {
-    if (replay === null || replay.step >= replay.record.actions.length) return;
+  function replayStep(): boolean {
+    if (replay === null || replay.step >= replay.record.actions.length) return false;
     const action = replay.record.actions[replay.step] as Action;
     // 记录与当前局面不符（比如中途被手动改过）就停在这儿，不要抛错
     if (!validateAction(state, action).ok) {
       console.warn('回放中断：行动与当前局面不符', replay.step, action);
-      return;
+      return false;
     }
     replay = { record: replay.record, step: replay.step + 1 };
     dispatch(action);
+    return true;
   }
 
   function stopReplay(): void {

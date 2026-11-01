@@ -277,13 +277,32 @@
     left: 50%;
     top: 34%;
     z-index: 30;
+    padding: 9px 18px;
     color: var(--text);
-    font-size: 26px;
+    background: rgba(250, 252, 255, 0.95);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: var(--shadow-float);
+    font-size: 22px;
     font-weight: 700;
-    letter-spacing: 8px;
+    letter-spacing: 2px;
+    white-space: nowrap;
     text-shadow: 0 2px 18px rgba(255, 255, 255, 0.95);
     pointer-events: none;
     animation: banner 1.7s ease forwards;
+  }
+
+  .turn-banner--self {
+    color: #ffffff;
+    background: var(--accent);
+    border-color: transparent;
+    text-shadow: none;
+  }
+
+  .turn-banner--other {
+    color: #87500f;
+    border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+    text-shadow: none;
   }
 
   @keyframes banner {

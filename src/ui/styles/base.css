@@ -52,7 +52,11 @@
     padding: 7px 12px;
     min-height: 38px;
     cursor: pointer;
-    transition: background 120ms ease;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease,
+      box-shadow 120ms ease,
+      transform 120ms ease;
   }
 
   button:hover:not(:disabled) {
@@ -69,6 +73,13 @@
     border-color: transparent;
     color: #ffffff;
     font-weight: 700;
+  }
+
+  button.primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 84%, #102a4c);
+    border-color: color-mix(in srgb, var(--accent) 72%, #102a4c);
+    box-shadow: 0 6px 16px rgba(46, 111, 181, 0.25);
+    transform: translateY(-1px);
   }
 
   button.ghost {

@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 
 import type { CharacterId } from '../../core/GameState';
 import type { PlayerView } from '../../core/View';
+import { playerLabel } from '../formatEvent';
 import type { UiText } from '../i18n';
 import { DetailPanel } from './DetailPanel';
 import { HpAvatar } from './HpAvatar';
@@ -22,8 +23,7 @@ export interface EnemyStripProps {
 
 export function EnemyStrip({ view, text, title }: EnemyStripProps) {
   const [openId, setOpenId] = useState<CharacterId | null>(null);
-  const enemy = view.viewer === 'P1' ? 'P2' : 'P1';
-  const characters = view.characters.filter((character) => character.owner === enemy);
+  const players = view.seats.filter((player) => player !== view.viewer);
 
   useEffect(() => {
     setOpenId(null);
@@ -33,23 +33,43 @@ export function EnemyStrip({ view, text, title }: EnemyStripProps) {
     <section className="enemy-strip">
       <h2 className="enemy-strip__title">{title}</h2>
       <div className="enemy-strip__list">
-        {characters.map((character) => (
-          <div key={character.id} className="enemy-strip__item">
-            <HpAvatar
-              text={text}
-              character={character}
-              expanded={openId === character.id}
-              onToggle={() =>
-                setOpenId((current) => (current === character.id ? null : character.id))
+        {players.map((player) => {
+          const characters = view.characters.filter((character) => character.owner === player);
+          return (
+            <div
+              key={player}
+              className={
+                player === view.currentPlayer
+                  ? 'enemy-strip__group enemy-strip__group--acting'
+                  : 'enemy-strip__group'
               }
-            />
-            {openId === character.id ? (
-              <div className="enemy-strip__detail">
-                <DetailPanel view={view} text={text} characterId={character.id} handCardId={null} />
-              </div>
-            ) : null}
-          </div>
-        ))}
+            >
+              <span className="enemy-strip__owner">{playerLabel(player, text)}</span>
+              {characters.map((character) => (
+                <div key={character.id} className="enemy-strip__item">
+                  <HpAvatar
+                    text={text}
+                    character={character}
+                    expanded={openId === character.id}
+                    onToggle={() =>
+                      setOpenId((current) => (current === character.id ? null : character.id))
+                    }
+                  />
+                  {openId === character.id ? (
+                    <div className="enemy-strip__detail">
+                      <DetailPanel
+                        view={view}
+                        text={text}
+                        characterId={character.id}
+                        handCardId={null}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
     </section>
   );

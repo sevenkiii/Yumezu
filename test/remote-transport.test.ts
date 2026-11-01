@@ -49,6 +49,27 @@ async function setup() {
   return { server, url, host, guest, hostTransport, guestTransport, hostStorage, guestStorage };
 }
 
+async function setupFour() {
+  const server = createGameServer({
+    port: 0,
+    host: '127.0.0.1',
+    staticDir: null,
+    heartbeatMs: 5_000,
+  });
+  const port = await server.listening;
+  const url = 'ws://127.0.0.1:' + port;
+  const joins = Array.from({ length: 4 }, () =>
+    connectRemote({
+      url,
+      roomId: 'four-room',
+      playerCount: 4,
+      storage: memoryStorage(),
+    }),
+  );
+  const transports = await Promise.all(joins.map((join) => join.ready));
+  return { server, joins, transports };
+}
+
 /** 现在轮到谁，就返回谁的 transport。 */
 function actingTransport(a: GameTransport, b: GameTransport): GameTransport {
   return a.getSnapshot().view.currentPlayer === a.getSnapshot().view.viewer ? a : b;
@@ -113,6 +134,44 @@ describe('联机 transport', () => {
 
     again.close();
     guest.close();
+    await server.close();
+  });
+
+  it('四人联机只把合法行动发给当前座位，并向所有人同步局面', async () => {
+    const { server, joins, transports } = await setupFour();
+    await waitFor(() => joins.every((join) => join.onlinePlayers.length === 4), '四人全部在线');
+
+    const snapshots = transports.map((transport) => transport.getSnapshot());
+    expect(new Set(snapshots.map((snapshot) => snapshot.view.viewer))).toEqual(
+      new Set(['P1', 'P2', 'P3', 'P4']),
+    );
+    expect(new Set(snapshots.map((snapshot) => snapshot.stateHash)).size).toBe(1);
+    expect(snapshots.filter((snapshot) => snapshot.legalActions.length > 0)).toHaveLength(1);
+
+    const acting = transports.find(
+      (transport) =>
+        transport.getSnapshot().view.currentPlayer === transport.getSnapshot().view.viewer,
+    );
+    if (acting === undefined) throw new Error('找不到当前行动的座位');
+    const actingSeat = acting.getSnapshot().view.viewer;
+    const before = acting.getSnapshot().stateHash;
+    acting.dispatch(acting.getSnapshot().legalActions[0] as Action);
+    await waitFor(
+      () => transports.every((transport) => transport.getSnapshot().stateHash !== before),
+      '四人收到同一手新快照',
+    );
+
+    expect(new Set(transports.map((transport) => transport.getSnapshot().stateHash)).size).toBe(1);
+    expect(acting.getSnapshot().legalActions).toEqual([]);
+    const next = transports.find(
+      (transport) =>
+        transport.getSnapshot().view.currentPlayer === transport.getSnapshot().view.viewer,
+    );
+    expect(next).toBeDefined();
+    expect(next?.getSnapshot().view.viewer).not.toBe(actingSeat);
+    expect(next?.getSnapshot().legalActions.length).toBeGreaterThan(0);
+
+    for (const join of joins) join.close();
     await server.close();
   });
 });
