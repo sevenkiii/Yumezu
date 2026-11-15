@@ -39,7 +39,7 @@ export type Effect =
       readonly kind: 'BLOCK_EDGE';
       readonly edge: EdgeKey;
       readonly owner: PlayerId;
-      readonly durationActions: number;
+      readonly durationTurns: number;
     }
   | { readonly kind: 'PLACE_TRAP'; readonly owner: PlayerId; readonly vertex: VertexId }
   | { readonly kind: 'SET_SHADOW_MARK'; readonly targetId: CharacterId; readonly vertex: VertexId };

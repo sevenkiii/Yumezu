@@ -130,7 +130,7 @@ describe('功能牌', () => {
     expect(findCharacter(next, 'P2:Nana')?.position).toBe(2);
   });
 
-  it('封路：封锁边在接下来的 3 次行动内有效，第 4 次行动开始时解除', () => {
+  it('封路：封锁边在接下来的 2 个回合内有效，第 3 个回合开始时解除', () => {
     const state = base({ P1: ['BlockRoad'] });
     const actions = cardActions(state, 'BlockRoad');
     const block = actions.find(
@@ -141,7 +141,6 @@ describe('功能牌', () => {
     let current = applyAction(state, block).state;
     expect(blockedEdgeSet(current).has('0-1')).toBe(true);
 
-    current = passOnce(current);
     current = passOnce(current);
     current = passOnce(current);
     expect(blockedEdgeSet(current).has('0-1')).toBe(true);
@@ -181,6 +180,8 @@ describe('功能牌', () => {
     expect(place).toBeDefined();
     let current = applyAction(state, place).state;
     expect(current.map.traps).toHaveLength(1);
+    // 用牌只占功能牌槽位，P1 还有一个角色操作；先结束回合才轮到 P2。
+    current = passOnce(current);
 
     const move = getLegalActions(current).find(
       (action) => action.type === 'MOVE' && action.characterId === 'P2:Nana' && action.to === 5,

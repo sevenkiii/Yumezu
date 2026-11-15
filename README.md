@@ -4,22 +4,20 @@
 
 > **随机平面图 + 每人 3 名角色 + 功能牌 + 多人轮流行动**
 
-当前状态：**Phase 1 ~ 5 已完成**（Phase 4 做到 4.8）。
+当前已具备完整本地对局、2 ~ 4 人联机、回放与统计工具。规则以
+[`RULES.md`](./RULES.md) 为准；协作约定见 [`AGENTS.md`](./AGENTS.md)。
 
-- Phase 1：无 UI 的纯核心引擎，可完整跑完一局（随机阵容、随机部署、轮流行动、移动 / 攻击 / 技能 / 功能牌、CD、陷阱与封路、胜负判定、Action Log）。
-- Phase 2：由 `mapSeed` 生成随机平面图（Delaunay + 随机生成树 + 补边 + 修复 + 参数化 Validator）并选出公平的出生中心。
+## 当前能力
 
-`npm run demo` 现在走的就是"地图 seed → 生成地图 → 一局完整对局"的正式入口。
+- 确定性核心引擎：不可变 `GameState`、注入式 RNG、种子 + 行动序列回放。
+- 随机平面图：按人数生成 30 / 36 / 42 个节点，并划分互不重叠的出生区域。
+- 完整战斗：6 名角色、11 张功能牌、移动 / 攻击 / 技能 / 状态 / 陷阱 / 封路 / 胜负。
+- 每回合两个操作槽位：角色操作（移动 / 普攻 / 技能）与功能牌操作（用牌 / 弃牌）各一次、顺序不限；两个都用完或点「结束回合」才换人。
+- 网页界面：卡牌化操作、地图缩放取景、移动与撞击动画、响应式布局、i18n。
+- 联机：服务器权威、按座位裁剪信息、2 ~ 4 人房间、断线重连。
+- 工具：批量模拟、数值总表、行动记录 / 回放。
 
-- Phase 3：6 名角色、11 张功能牌。
-- Phase 4（网页 UI，已做到 4.8）：完整对局；角色与功能牌都是卡牌样式、地图上使用角色立绘
-  （`npm run dev`）。操作：点角色卡选中 → 地图高亮可达点与可攻击目标 → **单击即执行**
-  （技能是选中后浮在卡牌上方的那颗圆钮；悔棋在顶栏；Esc / 点空白取消选中）。
-  另有地图缩放拖拽、选中自动取景与倾斜、角色沿边逐跳移动、攻击撞击、伤害飘字与回合幕布。
-- Phase 5：批量对局统计工具已可用（`npm run simulate`）；完整的平衡结论要等更聪明的 AI（Phase 6）。
-- 工具：`npm run stats` 生成数值总表 `STATS.md`；开发面板里可以**复制对局记录**给别人精确重放这一局。
-- Phase 7（联机）：`npm run server` 起服务器权威的联机服务——2 ~ 4 人用同一个房间号和人数
-  （或点邀请链接）就能打，支持断线重连与跨机。
+尚未实现正式 AI、观战、换设备接管与房间列表。
 
 ## 文档
 
@@ -32,26 +30,29 @@
 
 ## 技术栈
 
-TypeScript（strict）· Vite · React + SVG（Phase 4）· Vitest · ESLint + Prettier
+TypeScript（strict）· Vite · React + SVG · Vitest · ESLint + Prettier
 
 运行时：Node v22.13.1 / npm
 
 ## 常用命令
 
 ```bash
-npm install
+npm ci
+npm run dev       # 网页 + 开发联机服务（自动、仅本机后端 8787）
+npm run build     # 类型检查 + 生产构建
+npm run server    # 生产入口：0.0.0.0:8787，并托管 dist/
+npm run demo      # 无 UI 跑完一整局
+npm run simulate -- --games 200 --seed base   # 批量统计
+npm run stats     # 从定义重建 STATS.md
 npm run lint
 npm run format:check
 npm run typecheck
 npm run test
-npm run dev     # 启动网页界面；开发用联机服务会自动随 Vite 启动
-npm run demo    # 跑完一整局，输出阵容、胜者与行动统计
-npm run simulate -- --games 200 --seed base   # Phase 5 统计：胜率 / 长度 / 角色与卡牌使用率
-npm run stats   # 重新生成数值总表 STATS.md
-npm run server  # 联机服务端（0.0.0.0:8787；先 npm run build 就会顺带托管前端）
 ```
 
-> `npm run dev` 会同时启动网页与仅本机可用的 8787 联机服务；`npm run test` 跑核心引擎与界面的测试。
+开发时页面连接当前源的 `/ws`，Vite 代理到本机 8787。生产部署先
+`npm run build`，再运行 `npm run server`，访问 `http://<服务器>:8787/`。
+联机邀请链接带 `?room=房间号&players=2|3|4`。
 
 ## 目录结构
 
@@ -62,25 +63,22 @@ src/
 ├── characters/  Character / Skill + definitions/（每名角色一个文件）
 ├── cards/       Card / CardPool + definitions/（每张牌一个文件）
 ├── rules/       Targeting / Movement / Combat / EffectResolver / Turn / Action
-├── ai/          自动对局与 AI（Phase 6，暂缓）
+├── ai/          生产 AI（尚未实现）
 ├── ui/          React + SVG 界面（transport / interaction / i18n / components / styles）
-└── server/      WebSocket 联机（Phase 7）
+└── server/      WebSocket 联机（房间 / 权威会话 / 协议）
 assets/characters/  角色立绘（原图 + token/ 缩略图）
-tools/            开发脚本（run-ts.mjs、make-thumbnails.mjs）
-test/            单元测试、黄金测试与随机对局 demo（support/ 放夹具与临时决策器）
+tools/            TS 运行器、缩略图、数值表生成
+test/             单元 / 黄金 / 联机 / UI 测试与模拟
 ```
 
-## 开发阶段
+关键入口：
 
-| Phase | 内容                                                                                                             |
-| ----- | ---------------------------------------------------------------------------------------------------------------- |
-| 1     | ~~纯核心引擎~~ **已完成**：无 UI，能完整模拟一局 2 ~ 4 人混战                                                    |
-| 2     | ~~地图生成~~ **已完成**：随机平面图 + Validator + 出生点选择                                                     |
-| 3     | 6 名角色与 11 张功能牌（已在 Phase 1 一并实现，后续做内容调优）                                                  |
-| 4     | 网页 UI —— **4.1 ~ 4.8 已完成**（可对局、卡牌化视觉、立绘、缩放取景、逐跳移动与撞击等）；4.4 余下结果预览 / 音效 |
-| 5     | 测试与模拟 —— **已完成**（固定 seed、黄金测试、`npm run simulate` 统计工具）                                     |
-| 6     | AI（暂缓；做完才能跑出有意义的平衡数据）                                                                         |
-| 7     | 联机 —— **核心已完成**（WebSocket、2 ~ 4 人房间、服务器权威、断线重连、跨机可玩）；观战 / 换设备接管留待以后     |
+- 引擎：`src/core/GameEngine.ts`
+- 规则：`src/rules/`
+- 正式地图入口：`createGameFromSeed()`（`src/core/GameEngine.ts`）
+- UI 通道：`src/ui/transport.ts`
+- 服务端：`src/server/main.ts`
+- 规则书：`RULES.md`
 
 ## 许可证
 

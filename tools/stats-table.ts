@@ -27,6 +27,7 @@ import {
   MELTY_LAND_RANGE,
 } from '../src/characters/definitions/Melty';
 import { FREEZE_RANGE } from '../src/characters/definitions/Urara';
+import { SHADOW_RETURN_REDUCTION } from '../src/characters/definitions/Mikage';
 import {
   STAR_DASH_DAMAGE,
   STAR_DASH_RANGE,
@@ -37,7 +38,7 @@ import {
 import { FIRST_AID_HEAL } from '../src/cards/definitions/FirstAid';
 import { BLINK_RANGE } from '../src/cards/definitions/Blink';
 import { RECHARGE_AMOUNT } from '../src/cards/definitions/Recharge';
-import { BLOCK_DURATION_ACTIONS } from '../src/cards/definitions/BlockRoad';
+import { BLOCK_DURATION_TURNS } from '../src/cards/definitions/BlockRoad';
 import { MAX_TRAPS_PER_PLAYER, TRAP_DAMAGE } from '../src/cards/definitions/Trap';
 
 const text = getText();
@@ -59,7 +60,7 @@ function skillParamsOf(typeId: (typeof CHARACTER_TYPE_IDS)[number]): string {
         MELTY_LAND_DAMAGE
       );
     case 'Mikage':
-      return '首次受伤 −1，随后回到影标记（1 次）';
+      return '首次受伤 −' + SHADOW_RETURN_REDUCTION + '，随后回到影标记（1 次）';
     case 'Spica':
       return (
         '移动 ≤ ' +
@@ -86,7 +87,7 @@ function cardParamsOf(id: (typeof CARD_POOL)[number]): string {
     case 'Recharge':
       return 'CD −' + RECHARGE_AMOUNT;
     case 'BlockRoad':
-      return '持续 ' + BLOCK_DURATION_ACTIONS + ' 次行动';
+      return '持续 ' + BLOCK_DURATION_TURNS + ' 个回合';
     case 'Trap':
       return '伤害 ' + TRAP_DAMAGE + '，每人最多 ' + MAX_TRAPS_PER_PLAYER + ' 个';
     default:

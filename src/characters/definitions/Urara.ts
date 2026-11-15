@@ -1,7 +1,7 @@
 /** Urara：区域控制（「冻结」）。见 RULES.md §11.6。 */
 
 /** 「冻结」的作用距离。 */
-export const FREEZE_RANGE = 1;
+export const FREEZE_RANGE = 2;
 
 import type { SkillChoice } from '../../core/Action';
 import type { Effect } from '../../core/Effect';

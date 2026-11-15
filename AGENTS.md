@@ -1,91 +1,81 @@
 # AGENTS.md — 夢図（Yumezu）
 
-面向在本仓库工作的协作者（含 AI 助手）的注意事项。保持简短。
+面向接手本仓库的协作者与 AI。先读本文件，再按需阅读根 `README.md` 和对应目录 README。
 
 ## 第一原则
 
-- **`RULES.md` 是实现与测试的唯一依据。** 与它冲突时以它为准。
-- 根目录的 `statement.md` / `characters.md` / `cards.md` / `dev.md` / `clarify.md` / `answer.md` 是本地设计稿与讨论记录，已被 `.gitignore` 忽略：**不要修改、不要提交，也不要把它们当作最新依据**。
-- **不要擅自 `git commit` / `git push`**，只在用户明确要求时提交。
+- **`RULES.md` 是实现与测试的唯一依据。** 冲突时以它为准。
+- 根目录的 `statement.md` / `characters.md` / `cards.md` / `dev.md` / `clarify.md` / `answer.md`
+  是忽略提交的本地设计稿，**不要修改或当作最新规则**。
+- **不要擅自 commit / push**，只在用户明确要求时执行。
 
-## 常用命令
+## 快速开始
 
 ```bash
-npm install
-npm run lint           # eslint .
-npm run format         # prettier --write
-npm run format:check   # prettier --check（CI 使用）
-npm run typecheck      # tsc --noEmit
-npm run test           # vitest run
-npm run test:watch
-npm run dev            # 网页 + 开发用联机服务（自动启动 127.0.0.1:8787）
-npm run demo           # 跑完一整局
-npm run build          # 类型检查 + 生产构建
-npm run simulate -- --games 200 --seed base   # Phase 5 统计工具
-npm run stats          # 重新生成数值总表 STATS.md（从定义生成，别手改那张表）
-npm run server         # 联机服务端（0.0.0.0:8787，顺带托管 dist/）
+npm ci
+npm run dev      # 网页 + 开发联机服务；Vite 会把 /ws 代理到 127.0.0.1:8787
+npm run build    # 类型检查 + 生产构建
+npm run server   # 生产/联机入口：0.0.0.0:8787，同时托管 dist/
 ```
 
-CI 依次执行 lint → format:check → typecheck → test。改动后请本地跑通。
+质量检查顺序：`npm run lint` → `npm run format:check` → `npm run typecheck` → `npm run test`。
+当前基线：**22 个测试文件 / 184 个测试通过**。
 
-## 架构约束（重要）
+## 项目结构
 
-- 分层：`src/core`（GameState / Engine / Action / Effect / Event / RNG）、`src/map`、`src/characters`、`src/cards`、`src/rules`、`src/ai`、`src/ui`、`src/server`；测试与模拟放在 `test/`。
-- `src/core`、`src/map`、`src/rules`、`src/characters`、`src/cards` **不得**引用 DOM、React、SVG、Node API 或网络 API（已有 ESLint 规则拦截）。
-- 这些目录同样**禁止** `Math.random()` 与 `Date.now()`；所有随机必须走注入的 RNG（见 `RULES.md` §15）。
-- 引擎层零第三方运行时依赖。唯一例外是 Delaunay 三角剖分，必须封装在 `src/map/triangulation.ts` 内。
-- 状态不可变：`applyAction(state, action)` 返回新状态，不原地修改。
-- `validateAction(state, action)` 返回结构化结果；`applyAction` 遇到非法输入抛异常；需要提供 `getLegalActions(state, playerId)`。
-- `GameState` 必须可 JSON 序列化（回放、联机、测试哈希都依赖它）。
+```text
+Action → validateAction → applyAction(GameState) → GameState + GameEvent[]
+                              ↑
+            纯规则层 rules / characters / cards / map
 
-## 代码约定
+GameState → getViewFor(seat) → PlayerView
+                         ↓
+              UI transport → React/SVG 或 WebSocket 快照
+```
 
-- 每个目录一个 `README.md`（简要说明职责与文件用途）；新增文件时同步更新。
-- 关键类型与函数写简短 TSDoc。
-- TypeScript `strict` + `noUncheckedIndexedAccess`；不要使用 `any`，需要时先讨论。
-- UI 文案默认中文，但必须通过 i18n 接口，不要在组件里硬编码字符串。
-- 模块划分参照「每个角色一个文件、每张功能牌一个文件」的粒度。
-- 工具脚本放在 `tools/`，用 `node tools/run-ts.mjs <入口.ts>` 运行（借 Vite 转 TS，不要再引入 tsx / ts-node）。
-- **UI 只能通过 `src/ui/transport.ts` 读写对局**：组件不 import GameEngine，不读 GameState，
-  所有可点目标都从 `legalActions` 推导（见 `src/ui/interaction.ts`），确认时提交"查到的那个 Action"。
-- **UI 文案一律走 `src/ui/i18n`**，组件里不要出现玩家可见的字面量；引擎侧只保留 id。
-- 角色立绘放 `assets/characters/`，地图用的缩略图由 `node tools/make-thumbnails.mjs` 生成；
-  取景参数在 `src/ui/portraits.ts`（focusX / focusY / heightRatio），缺失素材要能回退成字母圆形。
-- 数值改动后跑一次 `npm run stats`，让 `STATS.md` 与定义保持一致；调平衡看这张表最快。
-- 样式在 `src/ui/styles/`：优先级由 `@layer` 声明（顺序见 `layers.css`），**规则必须写在层里**、
-  **同一个选择器全文件只出现一次**；牌面元素不要用 `background` 简写（会盖掉 `card.png`）。
+- `src/core`：状态、引擎、Action/Effect/Event、RNG、按座位裁剪的 View、稳定哈希、回放记录。
+- `src/map`：平面图生成、校验、出生区域与图算法。
+- `src/characters`、`src/cards`：角色与功能牌定义；每个角色/牌一个文件。
+- `src/rules`：移动、战斗、目标、效果结算、回合与合法行动枚举。
+- `src/ui`：React + SVG；只消费 `GameTransport` 快照，不直接读 GameState。
+- `src/server`：服务器权威的 2 ~ 4 人房间、断线重连、WebSocket 协议。
+- `test/`：单元、黄金、多人、联机与 UI 冒烟测试；模拟工具在 `test/simulate.ts`。
+- `tools/`：TS 脚本运行器、缩略图、数值表生成。
+- `src/ai/`：尚无生产实现；现有随机决策器仅用于 `test/support/`。
+
+## 不可破坏的约束
+
+- `src/core`、`src/map`、`src/rules`、`src/characters`、`src/cards` 禁止 DOM、React、Node、
+  网络 API，以及 `Math.random()` / `Date.now()`；随机必须走注入 RNG。
+- 引擎层零第三方运行时依赖；唯一例外是 `src/map/triangulation.ts` 中的 Delaunay。
+- `applyAction(state, action)` 必须返回新状态，不原地修改；非法 Action 抛异常。
+- `validateAction` 返回结构化结果；所有 UI 可点目标必须从 `getLegalActions` 推导。
+- `GameState` 必须可 JSON 序列化；回放和联机依赖“种子 + 行动序列”。
+- 一个回合 = 角色操作 ×1 + 功能牌操作 ×1（顺序不限）；两个槽位都用完或 `PASS` 才换人，
+  `turnIndex` 以**回合**为单位递增。槽位在 `GameState.turnSlots`，`getLegalActions` 只返回未用槽位的行动。
+- 联机只能向当前行动座位发送 `legalActions`；进行中的快照不得下发完整复盘种子。
+
+## UI 约定
+
+- UI 只能通过 `src/ui/transport.ts` 读写对局；组件不得 import `GameEngine` 或直接读 GameState。
+- 所有玩家可见文案走 `src/ui/i18n`，组件里不要硬编码。
+- 样式在 `src/ui/styles/`：规则必须写在 `@layer` 中，同一选择器在一个文件只出现一次；
+  牌面元素不要用 `background` 简写，避免覆盖 `card.png`。
+- 交互遵循“单击执行 + 悔棋”；选中角色后从 legal actions 生成高亮。
+- 动画是表现层，不得写回状态。新旧事件批次必须先取消旧 Web Animations，避免回放串动画。
+- 立绘在 `assets/characters/`，缩略图由 `node tools/make-thumbnails.mjs` 生成；
+  取景参数在 `src/ui/portraits.ts`，缺图必须回退为字母圆形。
+
+## 修改流程
+
+1. 规则变化先改 `RULES.md`，再改实现与测试。
+2. 新目录/新文件同步对应 README；关键类型和函数写简短 TSDoc。
+3. 数值变化后运行 `npm run stats`，不要手改 `STATS.md`。
+4. 完成前跑完整质量检查；新增随机测试必须固定 seed。
+5. 不引入 `tsx` / `ts-node`；工具脚本使用 `node tools/run-ts.mjs <入口.ts>`。
 
 ## 当前状态
 
-**Phase 1 ~ 3 已完成**：核心引擎（不可变状态、注入 RNG、可 JSON 序列化）、随机平面图生成与出生点选择、
-2 ~ 4 人混战（每人 3 名角色）、6 名角色 / 11 张功能牌。`npm run demo` 走
-"mapSeed → 生成地图 → 完整对局"的正式入口。
-
-**Phase 4（网页界面）已完成到 4.8**：
-
-- 4.1 ~ 4.3：可以完整对局；角色与功能牌都是卡牌样式，地图上使用角色立绘；
-- 4.5：卡牌浮在桌面上（牌面素材 `assets/ui/card.png`），并取消人工选位（开局由核心随机部署，见 `RULES.md` §3）；
-- 4.6 ~ 4.8：地图可缩放/拖拽、选中时自动聚焦并倾斜、伤害飘字，以及**交互减法**
-  （单击即执行、悔棋、Esc / 点空白取消，见 `src/ui/README.md`）；
-- 4.4 已完成的部分：角色**沿边逐跳移动**、攻击时的**撞击**（只有单体伤害才撞，AOE 略过）、回合交接幕布。
-
-**Phase 5 已完成**：`npm run simulate` 的批量统计工具（决策器目前是随机的，见 `test/support/`）。
-
-**工具与文档**：
-
-- `npm run stats` 从定义生成 **`STATS.md`（数值总表）**，调平衡看这张；改完数值记得重跑。
-- **对局记录 / 回放**：开发面板里可以复制"种子 + 行动序列"的 JSON，别人粘回去能精确重放
-  （格式在 `src/core/Record.ts`，界面侧见 `src/ui/README.md`）。
-- 结算幕布：分出胜负时盖屏，点一下收起（`ResultOverlay`）。
-
-样式集中在 `src/ui/styles/`，按 `@layer` 分层（顺序在 `layers.css`）。
-当前 **20 个测试文件 / 170 个测试通过**。
-
-**Phase 7（联机）核心已完成**：`npm run server` 起一个服务器权威的联机服务
-（2 ~ 4 人房间、断线重连、跨机可玩；见 `src/server/README.md`）。开发时 Vite 把 `/ws`
-代理到 8787，页面永远连自己这个源的 `/ws`；开发模式会自动拉起该服务，邀请链接带
-`?room=` 与 `?players=`。
-还没做：观战、换设备接管、房间列表。
-
-`src/ai` 仍是空目录：AI 按"够用的对手 + 抓 bug 的 fuzzer"来做即可
-（平衡数据主要靠真人测试 + 对局记录）。
+- 核心、地图、6 名角色、11 张牌、网页 UI、回放、统计工具均已完成。
+- 联机核心已完成：2 ~ 4 人房间、服务器权威、按座位隐私、断线重连、开发自动服务。
+- 尚未实现：正式 AI、观战、换设备接管、房间列表。

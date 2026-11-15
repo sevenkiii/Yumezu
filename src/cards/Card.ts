@@ -2,7 +2,7 @@
  * 功能牌的通用接口。
  *
  * 每张牌只做两件事：列出当前合法的参数、按参数生成 Effect。
- * 使用功能牌本身消耗一次行动（RULES.md §12）。
+ * 使用 / 弃掉功能牌消耗本回合的功能牌槽位（RULES.md §1、§12）。
  */
 
 import type { CardChoice } from '../core/Action';

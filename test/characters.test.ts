@@ -23,7 +23,7 @@ function hp(state: GameState, id: string): number {
 }
 
 describe('Nana「地球仪」', () => {
-  it('只能选择距离 2 以内的敌人，造成 4 点伤害并进入 CD 2', () => {
+  it('只能选择相邻的敌人（距离 ≤ 1），造成 4 点伤害并进入 CD 2', () => {
     const state = createBattleState({
       p1: ['Nana', 'Lily', 'Melty'],
       p2: ['Nana', 'Lily', 'Melty'],
@@ -31,7 +31,7 @@ describe('Nana「地球仪」', () => {
         'P1:Nana': 0,
         'P1:Lily': 13,
         'P1:Melty': 14,
-        'P2:Nana': 2,
+        'P2:Nana': 1,
         'P2:Lily': 3,
         'P2:Melty': 28,
       },
@@ -43,6 +43,24 @@ describe('Nana「地球仪」', () => {
     expect(hp(next, 'P2:Nana')).toBe(6);
     expect(hp(next, 'P2:Lily')).toBe(10);
     expect(findCharacter(next, 'P1:Nana')?.skillCd).toBe(2);
+  });
+
+  it('距离 2 的敌人不再是「地球仪」的合法目标（范围已收紧到 1）', () => {
+    const state = createBattleState({
+      p1: ['Nana', 'Lily', 'Melty'],
+      p2: ['Nana', 'Lily', 'Melty'],
+      positions: {
+        'P1:Nana': 0,
+        'P1:Lily': 13,
+        'P1:Melty': 14,
+        'P2:Nana': 2,
+        'P2:Lily': 23,
+        'P2:Melty': 28,
+      },
+      currentPlayer: 'P1',
+    });
+    expect(skillActions(state, 'P1:Nana')).toHaveLength(0);
+    expect(findCharacter(state, 'P1:Nana')?.attackRange).toBe(1);
   });
 
   it('范围内没有敌人时技能不可用', () => {
@@ -251,7 +269,7 @@ describe('Spica「星奔」', () => {
 });
 
 describe('Urara「冻结」', () => {
-  it('冻结距离 1 以内的所有敌人', () => {
+  it('冻结距离 ≤ 2 以内的所有敌人', () => {
     const state = createBattleState({
       p1: ['Urara', 'Nana', 'Lily'],
       p2: ['Nana', 'Lily', 'Melty'],
@@ -268,7 +286,9 @@ describe('Urara「冻结」', () => {
     const actions = skillActions(state, 'P1:Urara');
     expect(actions).toHaveLength(1);
     const next = useSkill(state, actions[0] as Action);
+    // 节点 8 与 Urara 距离 1、节点 12 距离 2，都该被冻住；节点 29 远在范围外。
     expect(findCharacter(next, 'P2:Nana')?.statuses.Frozen).toBe(true);
-    expect(findCharacter(next, 'P2:Lily')?.statuses.Frozen).toBe(false);
+    expect(findCharacter(next, 'P2:Lily')?.statuses.Frozen).toBe(true);
+    expect(findCharacter(next, 'P2:Melty')?.statuses.Frozen).toBe(false);
   });
 });

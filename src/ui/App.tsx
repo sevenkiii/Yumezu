@@ -112,6 +112,10 @@ export function GameScreen({ transport, text, remote }: GameScreenProps) {
   );
   const selectedCharacterId = ui.selectedCharacterId;
   const yourTurn = view.currentPlayer === view.viewer && !snapshot.finished;
+  /** 一个回合有角色 / 功能牌两个槽位；只用掉一个时提示玩家还可以继续操作。 */
+  const remainingSlot = yourTurn
+    ? text.format.remainingSlot(view.turnSlots.character, view.turnSlots.card)
+    : '';
   const everyoneOnline = remote !== undefined && remote.onlinePlayers.length >= remote.playerCount;
 
   // 状态变了（有人真的行动过）才清空 UI 选中态。
@@ -254,6 +258,7 @@ export function GameScreen({ transport, text, remote }: GameScreenProps) {
               ? text.format.yourTurn(playerLabel(view.currentPlayer, text))
               : text.format.currentPlayer(playerLabel(view.currentPlayer, text))}
           </span>
+          {remainingSlot !== '' ? <span className="chip slot-chip">{remainingSlot}</span> : null}
           {replaying ? <span className="chip chip--replay">{text.panel.replaying}</span> : null}
           {remote === undefined ? null : (
             <>

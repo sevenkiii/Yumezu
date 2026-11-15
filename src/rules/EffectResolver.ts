@@ -102,13 +102,13 @@ function applyEffect(state: GameState, effect: Effect, queue: Effect[], events: 
       state.map.blockedEdges.push({
         edge: effect.edge,
         owner: effect.owner,
-        expiresAtTurnIndex: state.turnIndex + effect.durationActions + 1,
+        expiresAtTurnIndex: state.turnIndex + effect.durationTurns + 1,
       });
       events.push({
         type: 'EDGE_BLOCKED',
         edge: effect.edge,
         owner: effect.owner,
-        expiresAtTurnIndex: state.turnIndex + effect.durationActions + 1,
+        expiresAtTurnIndex: state.turnIndex + effect.durationTurns + 1,
       });
       return;
     }

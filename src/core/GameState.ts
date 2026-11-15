@@ -121,6 +121,21 @@ export interface PlayerState {
   nextCardSeq: number;
 }
 
+/**
+ * 一个回合内两类操作槽位的使用情况；回合开始时重置。见 RULES.md §1、§7.1。
+ * 这是公开信息，会随 PlayerView 下发给所有座位。
+ */
+export interface TurnSlots {
+  /** MOVE / ATTACK / USE_SKILL 三选一。 */
+  character: boolean;
+  /** USE_CARD / DISCARD 二选一。 */
+  card: boolean;
+}
+
+export function createTurnSlots(): TurnSlots {
+  return { character: false, card: false };
+}
+
 export interface SpawnInfo {
   readonly center: VertexId;
   /** d(v, center) <= 1 的全部节点，含中心自身。 */
@@ -193,6 +208,8 @@ export interface GameState {
   currentPlayer: PlayerId;
   readonly firstPlayer: PlayerId;
   turnIndex: number;
+  /** 本回合还剩哪些操作槽位可用；只按「回合」重置，不按单个操作重置。 */
+  turnSlots: TurnSlots;
   rng: Record<RngStreamName, RngStreamState>;
   history: ActionRecord[];
   result: GameResult | null;

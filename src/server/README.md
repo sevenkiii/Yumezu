@@ -15,15 +15,21 @@
 ## 怎么跑
 
 ```bash
-npm run server                      # 0.0.0.0:8787，顺带托管 dist/（先 npm run build）
+npm run build
+npm run server                      # 0.0.0.0:8787，托管 dist/ 与 WebSocket
 npm run server -- --port 9000       # 换端口
 npm run server -- --no-static       # 只提供联机服务
 ```
+
+正式部署使用上面的 `build + server`；开发使用 `npm run dev`。
 
 开发时前端仍然用 `npm run dev`：Vite 会自动拉起一个仅本机使用的 8787 联机服务，并把
 `/ws` 代理过去（见 `vite.config.ts`）。所以**页面永远连自己这个源的 `/ws`** —— 本地、
 跨机、正式部署都是同一个地址，邀请链接里不需要写服务器地址。若 8787 已有手动运行的
 `npm run server`，开发服务器会直接复用。
+
+`tools/run-ts.mjs` 会设置 `YUMEZU_DISABLE_EMBEDDED_SERVER=1`，确保独立服务入口不会被
+开发插件再次拉起，避免 8787 自我占用。服务端只有在真正监听成功后才打印“已启动”。
 
 跨机游玩：把 `http://<你的地址>:<端口>/?room=房间号&players=4` 发给其他人即可。
 房间号与人数都必须一致；重连凭据会自动坐回原座位。

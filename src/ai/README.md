@@ -1,17 +1,16 @@
-# src/ai — 自动对局与 AI
+# src/ai — AI
 
-用于批量模拟的决策器。**Phase 6 暂缓**，但 Phase 5 的模拟需要一个临时的"随机合法行动"决策器。
+生产用 AI 尚未实现。当前批量模拟使用 `test/support/randomAgent.ts` 中的随机合法行动决策器。
 
-## 计划中的文件
+后续 AI 放在本目录，建议拆分：
 
-| 文件 | 职责 |
-|---|---|
-| `RandomAgent.ts` | 从 `getLegalActions` 中随机选择，供 Phase 5 的自动对局使用 |
-| `SearchAgent.ts` | 简单的合法动作搜索 AI（Phase 6，暂缓） |
+- 启发式对手：根据站位、威胁、HP 和手牌数量评分。
+- Fuzzer：随机但确定性，用于覆盖复杂 Action 组合和抓引擎 bug。
 
-## 关键约定
+## 约定
 
-- AI 只能通过 `Action` 与引擎交互，不得直接读写 `GameState`。
-- 必须确定性：随机决策也要走注入的 RNG。
+- AI 可以只读 `GameState` / `PlayerView`，但必须通过返回 `Action` 与引擎交互。
+- 不直接修改状态，不复制 `validateAction` / `applyAction` 的规则。
+- 随机决策必须使用注入 RNG，保证同一 seed 可复现。
 
-> 状态：尚未实现（Phase 5 / Phase 6）。
+随机决策器不是平衡数据来源；平衡应优先参考真人测试与对局记录。

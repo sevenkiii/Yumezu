@@ -7,7 +7,7 @@
 
 import { cardDefinition } from '../cards/Card';
 import { characterDefinition } from '../characters/Character';
-import type { Action } from '../core/Action';
+import { actionSlotOf, type Action } from '../core/Action';
 import type { GameState, PlayerId } from '../core/GameState';
 import { charactersOf, findCharacter, opponentsOf } from '../core/GameState';
 import { distance } from '../map/Graph';
@@ -23,6 +23,14 @@ function fail(code: string, reason: string): ValidationResult {
   return { ok: false, code, reason };
 }
 
+/** 该 Action 想用的槽位本回合是否已经用过；PASS 与 DEPLOY 不受槽位限制。 */
+function slotIsUsed(state: GameState, action: Action): boolean {
+  const slot = actionSlotOf(action);
+  if (slot === 'CHARACTER') return state.turnSlots.character;
+  if (slot === 'CARD') return state.turnSlots.card;
+  return false;
+}
+
 export function validateActionInternal(state: GameState, action: Action): ValidationResult {
   if (state.phase === 'FINISHED') return fail('GAME_FINISHED', '对局已经结束');
   if (action.player !== state.currentPlayer) {
@@ -33,6 +41,9 @@ export function validateActionInternal(state: GameState, action: Action): Valida
     return validateDeployment(state, action);
   }
   if (action.type === 'DEPLOY') return fail('PHASE_BATTLE', '部署阶段已经结束');
+  if (slotIsUsed(state, action)) {
+    return fail('SLOT_USED', '本回合的该操作槽位已经用完');
+  }
 
   switch (action.type) {
     case 'MOVE':
@@ -152,7 +163,7 @@ function validateDiscard(state: GameState, action: DiscardAction): ValidationRes
   return OK;
 }
 
-/** 枚举当前玩家的全部合法行动。 */
+/** 枚举当前玩家的全部合法行动；只包含本回合尚未使用的槽位。 */
 export function getLegalActions(state: GameState): Action[] {
   if (state.phase === 'FINISHED') return [];
   const player = state.currentPlayer;
@@ -160,38 +171,53 @@ export function getLegalActions(state: GameState): Action[] {
 
   const actions: Action[] = [];
   const enemies = opponentsOf(state, player);
-  for (const character of charactersOf(state, player)) {
-    if (!character.alive) continue;
-    if (!character.statuses.Frozen) {
-      for (const to of reachableDestinations(state, character)) {
-        actions.push({ type: 'MOVE', player, characterId: character.id, to });
+  const characterOpen = !state.turnSlots.character;
+  const cardOpen = !state.turnSlots.card;
+
+  if (characterOpen) {
+    for (const character of charactersOf(state, player)) {
+      if (!character.alive) continue;
+      if (!character.statuses.Frozen) {
+        for (const to of reachableDestinations(state, character)) {
+          actions.push({ type: 'MOVE', player, characterId: character.id, to });
+        }
       }
-    }
-    for (const enemy of enemies) {
-      for (const target of charactersOf(state, enemy)) {
-        if (!target.alive) continue;
-        const gap = distance(state.map.graph, character.position, target.position);
-        if (gap <= character.attackRange) {
-          actions.push({ type: 'ATTACK', player, characterId: character.id, targetId: target.id });
+      for (const enemy of enemies) {
+        for (const target of charactersOf(state, enemy)) {
+          if (!target.alive) continue;
+          const gap = distance(state.map.graph, character.position, target.position);
+          if (gap <= character.attackRange) {
+            actions.push({
+              type: 'ATTACK',
+              player,
+              characterId: character.id,
+              targetId: target.id,
+            });
+          }
+        }
+      }
+      if (character.skillCd === 0 && !character.statuses.SkillSealed) {
+        const definition = characterDefinition(character.typeId);
+        for (const choice of definition.skill.listChoices(state, character)) {
+          actions.push({ type: 'USE_SKILL', player, characterId: character.id, choice });
         }
       }
     }
-    if (character.skillCd === 0 && !character.statuses.SkillSealed) {
-      const definition = characterDefinition(character.typeId);
-      for (const choice of definition.skill.listChoices(state, character)) {
-        actions.push({ type: 'USE_SKILL', player, characterId: character.id, choice });
+  }
+  if (cardOpen) {
+    for (const card of state.players[player].hand) {
+      const definition = cardDefinition(card.cardId);
+      for (const choice of definition.listChoices(state, player)) {
+        actions.push({ type: 'USE_CARD', player, handCardId: card.id, choice });
       }
     }
   }
-  for (const card of state.players[player].hand) {
-    const definition = cardDefinition(card.cardId);
-    for (const choice of definition.listChoices(state, player)) {
-      actions.push({ type: 'USE_CARD', player, handCardId: card.id, choice });
-    }
-  }
+  // PASS 随时可用：立即结束回合，放弃剩余槽位。
   actions.push({ type: 'PASS', player });
-  for (const card of state.players[player].hand) {
-    actions.push({ type: 'DISCARD', player, handCardId: card.id });
+  if (cardOpen) {
+    for (const card of state.players[player].hand) {
+      actions.push({ type: 'DISCARD', player, handCardId: card.id });
+    }
   }
   return actions;
 }

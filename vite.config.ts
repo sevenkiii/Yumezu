@@ -115,8 +115,8 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['test/**/*.test.{ts,tsx}'],
-    // 自动对局模拟需要跑完整局，默认 5s 超时不够
-    testTimeout: 20000,
+    // 自动对局模拟需要跑完整局；并发跑满时单局可能到 15s 以上，留足余量避免偶发超时
+    testTimeout: 30000,
     passWithNoTests: true,
   },
 });

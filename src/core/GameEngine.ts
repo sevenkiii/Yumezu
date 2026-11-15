@@ -31,10 +31,10 @@ import {
   initialiseRoster,
   pruneExpiredBlocks,
 } from '../rules/TurnRules';
-import { actingCharacterId, type Action } from './Action';
+import { actionSlotOf, type Action } from './Action';
 import type { GameEvent } from './Event';
 import type { CharacterState, Deployment, GameState, PlayerId, VertexId } from './GameState';
-import { PLAYER_IDS, findCharacter, normalizePlayerCount } from './GameState';
+import { PLAYER_IDS, createTurnSlots, findCharacter, normalizePlayerCount } from './GameState';
 import { createRngStreams, nextIndex } from './RNG';
 
 export class EngineError extends Error {
@@ -92,6 +92,7 @@ export function createGame(options: CreateGameOptions): GameState {
     currentPlayer: 'P1',
     firstPlayer,
     turnIndex: 0,
+    turnSlots: createTurnSlots(),
     rng,
     history: [],
     result: null,
@@ -203,14 +204,28 @@ export function applyAction(
   if (action.type === 'DEPLOY') {
     performDeployment(draft, action, events);
   } else {
-    consumeActingStatuses(draft, action, events);
+    // 【冻结】/【封技】按目标自己的回合计时，由 endTurn 统一移除（RULES.md §10）。
     performBattleAction(draft, action, events);
+    consumeSlot(draft, action);
     checkGameEnd(draft, events);
-    if (draft.phase === 'BATTLE') endTurn(draft, events);
+    // 两个槽位都用完，或玩家 PASS 提前收手，才把行动权交给下一个座位。
+    if (draft.phase === 'BATTLE' && turnIsOver(draft, action)) endTurn(draft, events);
   }
 
   draft.history.push({ action, events });
   return { state: draft, events };
+}
+
+/** 标记本回合已用掉的槽位。PASS 不占槽位，它直接结束回合。 */
+function consumeSlot(state: GameState, action: Action): void {
+  const slot = actionSlotOf(action);
+  if (slot === 'CHARACTER') state.turnSlots.character = true;
+  else if (slot === 'CARD') state.turnSlots.card = true;
+}
+
+/** 是否该换人了：两个槽位都用完，或玩家选择 PASS。 */
+function turnIsOver(state: GameState, action: Action): boolean {
+  return action.type === 'PASS' || (state.turnSlots.character && state.turnSlots.card);
 }
 
 /** 提交部署；双方都提交后同时公开并进入战斗阶段。 */
@@ -252,25 +267,6 @@ function performDeployment(
   state.currentPlayer = state.firstPlayer;
   state.turnIndex = 0;
   beginTurn(state, state.firstPlayer, events);
-}
-
-/**
- * 被选为行动角色时消耗「冻结 / 封技」。
- * 注意：使用功能牌的行动不会选中任何角色，因此不会消耗这两种状态。
- */
-function consumeActingStatuses(state: GameState, action: Action, events: GameEvent[]): void {
-  const id = actingCharacterId(action);
-  if (id === null) return;
-  const character = findCharacter(state, id);
-  if (character === null) return;
-  if (character.statuses.Frozen) {
-    character.statuses.Frozen = false;
-    events.push({ type: 'STATUS_REMOVED', targetId: character.id, status: 'Frozen' });
-  }
-  if (character.statuses.SkillSealed) {
-    character.statuses.SkillSealed = false;
-    events.push({ type: 'STATUS_REMOVED', targetId: character.id, status: 'SkillSealed' });
-  }
 }
 
 function performBattleAction(state: GameState, action: Action, events: GameEvent[]): void {

@@ -102,7 +102,8 @@ describe('联机 transport', () => {
     const { server, host, guest, hostTransport, guestTransport } = await setup();
     const acting = actingTransport(hostTransport, guestTransport);
     const other = acting === hostTransport ? guestTransport : hostTransport;
-    const action = acting.getSnapshot().legalActions[0] as Action;
+    // 只有 PASS 会立即结束回合；随便点一个操作可能还留着另一个槽位。
+    const action = acting.getSnapshot().legalActions.find((item) => item.type === 'PASS') as Action;
     const before = acting.getSnapshot().stateHash;
 
     acting.dispatch(action);
@@ -155,7 +156,8 @@ describe('联机 transport', () => {
     if (acting === undefined) throw new Error('找不到当前行动的座位');
     const actingSeat = acting.getSnapshot().view.viewer;
     const before = acting.getSnapshot().stateHash;
-    acting.dispatch(acting.getSnapshot().legalActions[0] as Action);
+    const pass = acting.getSnapshot().legalActions.find((item) => item.type === 'PASS') as Action;
+    acting.dispatch(pass);
     await waitFor(
       () => transports.every((transport) => transport.getSnapshot().stateHash !== before),
       '四人收到同一手新快照',

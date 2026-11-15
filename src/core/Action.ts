@@ -1,8 +1,9 @@
 /**
  * 行动定义。见 RULES.md §1。
  *
- * 一次行动只能做一个主要操作：移动 / 普攻 / 专属技能 / 使用功能牌，
- * 另加 PASS（放弃）与 DISCARD（弃牌）两种兜底操作。
+ * 一个回合有两个独立槽位：角色操作（移动 / 普攻 / 专属技能，三选一）
+ * 与功能牌操作（使用功能牌 / 弃牌，二选一），顺序不限、各最多一次。
+ * PASS 立即结束本回合，放弃剩余槽位。
  */
 
 import type {
@@ -62,13 +63,22 @@ export type Action =
 
 export type ActionType = Action['type'];
 
-/** 参与角色行动（会消耗该角色状态）的行动类型。 */
-export function actingCharacterId(action: Action): CharacterId | null {
+/** 一个回合内的操作槽位；TURN_END 表示立即结束回合。 */
+export type ActionSlot = 'CHARACTER' | 'CARD' | 'TURN_END';
+
+/** 这个 Action 占用哪个槽位；DEPLOY 不属于战斗回合，返回 null。 */
+export function actionSlotOf(action: Action): ActionSlot | null {
   switch (action.type) {
     case 'MOVE':
     case 'ATTACK':
     case 'USE_SKILL':
-      return action.characterId;
+      return 'CHARACTER';
+    case 'USE_CARD':
+    case 'DISCARD':
+      return 'CARD';
+    case 'PASS':
+      return 'TURN_END';
+    case 'DEPLOY':
     default:
       return null;
   }

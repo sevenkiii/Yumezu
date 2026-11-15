@@ -118,7 +118,7 @@ describe('回合结构', () => {
         'P1:Nana': 0,
         'P1:Lily': 13,
         'P1:Melty': 14,
-        'P2:Nana': 2,
+        'P2:Nana': 1,
         'P2:Lily': 23,
         'P2:Melty': 28,
       },
@@ -128,6 +128,11 @@ describe('回合结构', () => {
       (action) => action.type === 'USE_SKILL' && action.characterId === 'P1:Nana',
     ) as Action;
     state = applyAction(state, skill).state;
+    expect(findCharacter(state, 'P1:Nana')?.skillCd).toBe(2);
+
+    // 技能只占角色槽位，P1 仍可再用一张牌；这里用 PASS 直接收手。
+    state = passOnce(state);
+    expect(state.currentPlayer).toBe('P2');
     expect(findCharacter(state, 'P1:Nana')?.skillCd).toBe(2);
 
     state = passOnce(state);
@@ -140,7 +145,7 @@ describe('回合结构', () => {
     expect(findCharacter(state, 'P1:Nana')?.skillCd).toBe(0);
   });
 
-  it('每次行动后 turnIndex 递增并交换行动权', () => {
+  it('PASS 立即结束本回合，turnIndex 递增并交换行动权', () => {
     const state = createBattleState({ currentPlayer: 'P1' });
     const next = passOnce(state);
     expect(next.turnIndex).toBe(state.turnIndex + 1);

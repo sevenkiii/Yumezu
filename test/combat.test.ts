@@ -59,7 +59,7 @@ describe('伤害结算管线（RULES.md §9）', () => {
     expect(target.statuses.Shielded).toBe(false);
   });
 
-  it('影返：减伤 1 并瞬移回影标记', () => {
+  it('影返：减伤 2 并瞬移回影标记', () => {
     const state = setup();
     const mikage = findCharacter(state, 'P2:Mikage');
     if (mikage === null) throw new Error('missing');
@@ -67,9 +67,10 @@ describe('伤害结算管线（RULES.md §9）', () => {
     mikage.shadowMark = 20;
 
     const events = resolveEffects(state, [
-      { kind: 'DAMAGE', targetId: mikage.id, amount: 2, source: attackFromP1('P1:Nana') },
+      { kind: 'DAMAGE', targetId: mikage.id, amount: 3, source: attackFromP1('P1:Nana') },
     ]);
 
+    // 3 − 2 = 1 点伤害：HP 12 → 11
     expect(mikage.hp).toBe(11);
     expect(mikage.position).toBe(20);
     expect(mikage.shadowMark).toBeNull();
@@ -86,7 +87,7 @@ describe('伤害结算管线（RULES.md §9）', () => {
     ally.position = 20;
 
     const events = resolveEffects(state, [
-      { kind: 'DAMAGE', targetId: mikage.id, amount: 2, source: attackFromP1('P1:Nana') },
+      { kind: 'DAMAGE', targetId: mikage.id, amount: 3, source: attackFromP1('P1:Nana') },
     ]);
 
     expect(mikage.hp).toBe(11);

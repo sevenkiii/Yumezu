@@ -19,6 +19,7 @@ import type {
   PlayerId,
   SpawnInfo,
   Trap,
+  TurnSlots,
 } from './GameState';
 import { opponentsOf } from './GameState';
 
@@ -28,6 +29,8 @@ export interface PlayerView {
   readonly seats: readonly PlayerId[];
   readonly phase: GamePhase;
   readonly turnIndex: number;
+  /** 当前行动者本回合还剩哪些操作槽位可用（公开信息）。见 RULES.md §1。 */
+  readonly turnSlots: TurnSlots;
   readonly currentPlayer: PlayerId;
   readonly firstPlayer: PlayerId;
   readonly result: GameResult | null;
@@ -75,6 +78,7 @@ export function getViewFor(state: GameState, viewer: PlayerId): PlayerView {
     seats: state.seats,
     phase: state.phase,
     turnIndex: state.turnIndex,
+    turnSlots: { ...state.turnSlots },
     currentPlayer: state.currentPlayer,
     firstPlayer: state.firstPlayer,
     result: state.result,

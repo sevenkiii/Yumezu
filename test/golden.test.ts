@@ -35,8 +35,8 @@ describe('固定 seed 的黄金测试', () => {
     for (const seed of ['golden-1', 'golden-2', 'golden-3']) {
       const log = playGame(newGame(seed, 400), createRandomAgent('agent-' + seed));
       expect(isFinished(log.state)).toBe(true);
-      // 双方部署占 2 次行动且不推进 turnIndex，因此上界是 maxTurns + 2
-      expect(log.actionCount).toBeLessThanOrEqual(402);
+      // 一个回合最多 2 个操作；部署阶段的 2 次提交也不推进 turnIndex。
+      expect(log.actionCount).toBeLessThanOrEqual(400 * 2 + 2);
     }
   });
 });

@@ -11,7 +11,7 @@
 | `MapGenerator.ts`   | 采点 → Delaunay → 随机生成树 → 补边 → 修复 → 校验 → 重试         |
 | `MapValidator.ts`   | 统计与阈值检查（连通性、度数、单线路径、直径、桥、割点、边交叉） |
 | `SpawnGenerator.ts` | 两人出生中心候选、多人生成 maximin 中心、区域计算、地图中心      |
-| `fixtures.ts`       | Phase 1 遗留的固定网格地图（测试用基准，仍满足同一套校验）       |
+| `fixtures.ts`       | 固定网格地图基准（测试用，仍满足同一套结构校验）                 |
 
 ## 生成流程
 
@@ -37,4 +37,5 @@ mapSeed → points 子流采点（单位正方形 + 最小间距，放不下时�
 - 失败 `maxAttempts` 次后抛 `MapGenerationError`（带失败原因统计），**不静默放宽条件**。
 - 距离分「图距离」与「移动距离」两种，不可混用（见 `RULES.md` §6）。
 
-> 状态：已实现（Phase 2）。
+入口：`generateMap(mapSeed, params, playerCount)`；正式对局由
+`createGameFromSeed()` 统一调用。

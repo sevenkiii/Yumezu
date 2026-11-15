@@ -1,7 +1,7 @@
 /** Nana：单体爆发（「地球仪」）。见 RULES.md §11.1。 */
 
-/** 「地球仪」的作用距离。 */
-export const GLOBE_RANGE = 2;
+/** 「地球仪」的作用距离。与普攻一样都要求相邻（图距离 1）。 */
+export const GLOBE_RANGE = 1;
 /** 「地球仪」的伤害值。 */
 export const GLOBE_DAMAGE = 4;
 
@@ -39,6 +39,7 @@ export const nana: CharacterDefinition = {
   hp: 10,
   attackDamage: 2,
   moveRange: 2,
+  /** 普攻与「地球仪」同为 1 格（相邻）。见 RULES.md §11.1。 */
   attackRange: 1,
   skill,
 };

@@ -1,7 +1,7 @@
-/** 封路：封锁一条边（对手 2 次行动 + 自己 1 次行动）。见 RULES.md §12。 */
+/** 封路：封锁一条边，持续 2 个回合。见 RULES.md §12。 */
 
-/** 封锁持续的行动次数。 */
-export const BLOCK_DURATION_ACTIONS = 3;
+/** 封锁持续的回合数；turnIndex 以回合为单位（RULES.md §16）。 */
+export const BLOCK_DURATION_TURNS = 2;
 
 import type { CardChoice } from '../../core/Action';
 import type { Effect } from '../../core/Effect';
@@ -27,7 +27,7 @@ export const blockRoad: CardDefinition = {
         kind: 'BLOCK_EDGE',
         edge: choice.edge,
         owner: player,
-        durationActions: BLOCK_DURATION_ACTIONS,
+        durationTurns: BLOCK_DURATION_TURNS,
       },
     ];
   },

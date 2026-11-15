@@ -19,7 +19,7 @@ export const zhCN: UiText = {
     attack: '普通攻击',
     skill: '专属技能',
     card: '功能牌',
-    pass: '放弃行动',
+    pass: '结束回合',
     discard: '弃牌',
     confirm: '确认行动',
     cancel: '取消',
@@ -148,6 +148,11 @@ export const zhCN: UiText = {
     turn: (index) => '回合 ' + index,
     currentPlayer: (player) => player + ' 行动中',
     yourTurn: (player) => player + ' · 轮到你行动',
+    remainingSlot: (characterUsed, cardUsed) => {
+      if (characterUsed && !cardUsed) return '本回合还可：功能牌操作';
+      if (cardUsed && !characterUsed) return '本回合还可：角色操作';
+      return '';
+    },
     hp: (hp, maxHp) => hp + ' / ' + maxHp,
     cooldown: (value) => (value <= 0 ? '可用' : 'CD ' + value),
     handCount: (count) => count + ' 张',
@@ -175,7 +180,7 @@ export const zhCN: UiText = {
     shadowReturn: (who, success) => (success ? who + ' 返回影标记' : who + ' 回返失败'),
     cooldownModified: (who, value) => who + ' 的技能 CD 变为 ' + value,
     gameEnd: (result) => '对局结束：' + result,
-    pass: (player) => player + ' 放弃行动',
+    pass: (player) => player + ' 结束回合',
     deploy: (player) => player + ' 完成部署',
     actedMove: (who) => who + ' 移动（留在原地）',
     actedAttack: (who) => who + ' 发起攻击，但没有造成伤害',
@@ -187,7 +192,7 @@ export const zhCN: UiText = {
       name: 'Nana',
       role: '单体爆发',
       skillName: '地球仪',
-      skillDescription: '对距离不超过 2 的一名敌方角色造成 4 点伤害。',
+      skillDescription: '对距离不超过 1 的一名敌方角色造成 4 点伤害。',
     },
     Lily: {
       name: 'Lily',
@@ -207,7 +212,7 @@ export const zhCN: UiText = {
       role: '预判 / 防守反制',
       skillName: '影返',
       skillDescription:
-        '在当前位置留下影标记：直到触发或被重新使用前，第一次受到的伤害减 1，随后立即返回影标记所在节点。',
+        '在当前位置留下影标记：直到触发或被重新使用前，第一次受到的伤害减 2，随后立即返回影标记所在节点。',
     },
     Spica: {
       name: 'Spica',
@@ -221,7 +226,7 @@ export const zhCN: UiText = {
       role: '区域控制',
       skillName: '冻结',
       skillDescription:
-        '以自身为中心、距离不超过 1 的所有敌方角色获得【冻结】：下一次行动不能移动。',
+        '以自身为中心、距离不超过 2 的所有敌方角色获得【冻结】：一个回合内不能移动。',
     },
   },
 
@@ -259,7 +264,7 @@ export const zhCN: UiText = {
     },
     BlockRoad: {
       name: '封路',
-      description: '选择地图上的一条边，封锁它（对手 2 次行动 + 自己 1 次行动）。',
+      description: '选择地图上的一条边，封锁它（持续 2 个回合）。',
     },
     Mark: {
       name: '标记',
@@ -267,7 +272,7 @@ export const zhCN: UiText = {
     },
     SealSkill: {
       name: '封技',
-      description: '选择一名敌方角色，使其获得【封技】：下一次行动不能使用专属技能。',
+      description: '选择一名敌方角色，使其获得【封技】：一个回合内不能使用专属技能。',
     },
     Trap: {
       name: '陷阱',
@@ -301,8 +306,8 @@ export const zhCN: UiText = {
   },
 
   status: {
-    Frozen: { name: '冻结', short: '冻', description: '下一次行动不能移动' },
-    SkillSealed: { name: '封技', short: '封', description: '下一次行动不能使用专属技能' },
+    Frozen: { name: '冻结', short: '冻', description: '一个回合内不能移动' },
+    SkillSealed: { name: '封技', short: '封', description: '一个回合内不能使用专属技能' },
     Marked: { name: '标记', short: '标', description: '下一次受到的伤害 +1' },
     Shielded: { name: '护盾', short: '盾', description: '下一次受到的伤害 -2' },
     Empowered: { name: '强袭', short: '强', description: '下一次普通攻击伤害 +1' },

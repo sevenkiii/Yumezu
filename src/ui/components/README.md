@@ -7,14 +7,17 @@
 | `CharacterCard.tsx`  | 角色卡（底部扇形用）：立绘 + 名字 + HP 条 + 状态；选中后另外浮出一颗技能圆钮（CD 环） |
 | `Portrait.tsx`       | 立绘渲染：用 SVG viewBox 当裁切框，取景来自 `portraits.ts`                            |
 | `MapView.tsx`        | 一张 SVG：边 / 陷阱 / 出生区 / 节点 / 影标记 / 圆形头像角色（含逐跳移动动画）         |
-| `EnemyStrip.tsx`     | 顶栏的对手条：一行 `HpAvatar`，点某个头像就地展开它的详情                             |
-| `HpAvatar.tsx`       | 对手头像：圆形立绘 + 一圈剩余血量环（点一下展开 / 收起）                              |
+| `EnemyStrip.tsx`     | 顶栏的其他玩家条：按座位分组，点某个头像就地展开详情                                  |
+| `HpAvatar.tsx`       | 角色头像：圆形立绘 + 一圈剩余血量环                                                   |
 | `HandView.tsx`       | 手牌（默认全展开，含弃牌按钮）                                                        |
-| `ActionBar.tsx`      | 地图顶部的提示胶囊 + 仅剩的按需浮层（弃牌 / 净化选状态）；单击执行后已无确认按钮      |
+| `ActionBar.tsx`      | 地图提示胶囊 + 按需浮层（弃牌 / 净化选状态）                                          |
 | `DetailPanel.tsx`    | 选中卡牌后就地展开的介绍（名字、HP、技能全文、数值）                                  |
 | `EffectsLayer.tsx`   | 由事件驱动的表现层：伤害飘字 / 命中环 / 移动轨迹 / 阵亡涟漪                           |
 | `ActionLogPanel.tsx` | 行动记录（已过滤对手手牌内容）                                                        |
-| `NewGameScreen.tsx`  | 开局界面（两个种子）                                                                  |
+| `NewGameScreen.tsx`  | 首页：本地种子、2~4 人选择、创建 / 加入房间                                           |
+| `OnlineRoom.tsx`     | 联机等待页：房间号、人数、邀请链接、连接状态                                          |
+| `ReplayPanel.tsx`    | 对局记录复制、载入、逐步/自动回放                                                     |
+| `ResultOverlay.tsx`  | 胜负结算幕布                                                                          |
 
 ## 约定
 

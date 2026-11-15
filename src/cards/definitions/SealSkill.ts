@@ -1,4 +1,4 @@
-/** 封技：下一次行动不能使用专属技能。见 RULES.md §12。 */
+/** 封技：一个回合内不能使用专属技能。见 RULES.md §10、§12。 */
 
 import type { CardChoice } from '../../core/Action';
 import type { Effect } from '../../core/Effect';

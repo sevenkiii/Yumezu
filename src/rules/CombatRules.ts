@@ -5,6 +5,7 @@
  * 本模块只做计算，不修改状态；状态的消耗由 EffectResolver 负责。
  */
 
+import { SHADOW_RETURN_REDUCTION } from '../characters/definitions/Mikage';
 import type { DamageSource } from '../core/Effect';
 import type { CharacterState, GameState } from '../core/GameState';
 import { findCharacter } from '../core/GameState';
@@ -37,7 +38,7 @@ export function computeDamage(
   if (target.statuses.Marked) amount += 1;
   if (target.statuses.Shielded) amount -= 2;
   const triggeredShadow = target.shadowMark !== null;
-  if (triggeredShadow) amount -= 1;
+  if (triggeredShadow) amount -= SHADOW_RETURN_REDUCTION;
 
   return {
     amount: Math.max(0, amount),

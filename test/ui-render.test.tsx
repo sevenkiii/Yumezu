@@ -6,6 +6,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
+import type { Action } from '../src/core/Action';
 import { createGame, createGameFromSeed, getLegalActions } from '../src/core/GameEngine';
 import { findCharacter } from '../src/core/GameState';
 import { getViewFor } from '../src/core/View';
@@ -76,6 +77,23 @@ describe('界面渲染冒烟测试', () => {
     expect(html).toContain('enemy-strip');
     expect(html).toContain('turn-indicator--self');
     expect(html).toContain(text.format.yourTurn(playerLabel(currentPlayer, text)));
+  });
+
+  it('一个回合只用一个槽位时，顶栏会提示剩下的操作', () => {
+    const transport = createLocalTransport({ mapSeed: 'render-map', gameSeed: 'render-game' });
+    expect(renderToStaticMarkup(<GameScreen transport={transport} text={text} />)).not.toContain(
+      'slot-chip',
+    );
+
+    const move = transport.getSnapshot().legalActions.find((action) => action.type === 'MOVE');
+    expect(move).toBeDefined();
+    transport.dispatch(move as Action);
+
+    const html = renderToStaticMarkup(<GameScreen transport={transport} text={text} />);
+    expect(html).toContain('slot-chip');
+    expect(html).toContain(text.format.remainingSlot(true, false));
+    // 回合还没结束，仍然轮到自己
+    expect(html).toContain('turn-indicator--self');
   });
 
   it('地图渲染节点、立绘与高亮', () => {

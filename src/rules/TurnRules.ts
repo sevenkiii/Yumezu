@@ -14,7 +14,7 @@ import type {
   PlayerId,
   VertexId,
 } from '../core/GameState';
-import { CHARACTER_TYPE_IDS, aliveCharactersOf } from '../core/GameState';
+import { CHARACTER_TYPE_IDS, aliveCharactersOf, createTurnSlots } from '../core/GameState';
 import { shuffled } from '../core/RNG';
 
 /** 每方角色数量。 */
@@ -101,8 +101,11 @@ export function pruneExpiredBlocks(state: GameState, events: GameEvent[]): void 
   state.map.blockedEdges = kept;
 }
 
-/** 回合开始：先递减 CD，再抽牌（手牌 < 5 时）。 */
+/** 回合开始：重置槽位 → 递减 CD → 抽牌（手牌 < 5 时）。见 RULES.md §7.1。 */
 export function beginTurn(state: GameState, player: PlayerId, events: GameEvent[]): void {
+  state.turnSlots = createTurnSlots();
+  // 到期以回合为准：一个回合内的第二个操作不会让封锁提前解除。
+  pruneExpiredBlocks(state, events);
   events.push({ type: 'TURN_START', player, turnIndex: state.turnIndex });
   for (const character of state.characters) {
     if (character.owner !== player || !character.alive || character.skillCd <= 0) continue;
@@ -127,8 +130,31 @@ export function beginTurn(state: GameState, player: PlayerId, events: GameEvent[
   }
 }
 
-/** 回合结束：推进 turnIndex，把行动权交给下一个还有存活角色的座位。 */
+/**
+ * 回合结束时统一移除【冻结】/【封技】。见 RULES.md §10：
+ * 这两个状态按目标自己的回合计时，施加后一直生效到该玩家下一次自己的回合结束，
+ * 期间不因"选中角色"或"做了什么操作"而提前消耗。
+ *
+ * 注意只清理**刚结束回合的这位玩家**的角色：状态都是敌方施加的，所以施加当回合
+ * 不会被清掉；多人局里中间隔着别人的回合也不会清掉。
+ */
+export function expireTurnStatuses(state: GameState, player: PlayerId, events: GameEvent[]): void {
+  for (const character of state.characters) {
+    if (character.owner !== player || !character.alive) continue;
+    if (character.statuses.Frozen) {
+      character.statuses.Frozen = false;
+      events.push({ type: 'STATUS_REMOVED', targetId: character.id, status: 'Frozen' });
+    }
+    if (character.statuses.SkillSealed) {
+      character.statuses.SkillSealed = false;
+      events.push({ type: 'STATUS_REMOVED', targetId: character.id, status: 'SkillSealed' });
+    }
+  }
+}
+
+/** 回合结束：推进 turnIndex（以回合为单位），把行动权交给下一个还有存活角色的座位。 */
 export function endTurn(state: GameState, events: GameEvent[]): void {
+  expireTurnStatuses(state, state.currentPlayer, events);
   state.turnIndex += 1;
   const order = state.seats;
   const current = order.indexOf(state.currentPlayer);

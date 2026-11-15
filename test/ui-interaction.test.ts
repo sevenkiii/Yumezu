@@ -141,7 +141,7 @@ describe('UI 交互层：选中 → 高亮 → 点两次执行', () => {
         'P1:Nana': 0,
         'P1:Lily': 13,
         'P1:Melty': 14,
-        'P2:Nana': 2,
+        'P2:Nana': 1,
         'P2:Lily': 23,
         'P2:Melty': 28,
       },

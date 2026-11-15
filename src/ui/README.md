@@ -11,8 +11,12 @@ React + SVG 界面。**只负责显示状态与产生 Action，从不修改游�
 5. **悔棋**：顶栏的「悔棋」按钮可以回退上一步——这是本地对局的便利功能，不是游戏规则（联机不可用）；
 6. 只有"还需要再选一个参数"的情况才出现浮动层（弃牌、净化选状态）。
 
+一个回合可各做一次角色操作与功能牌操作。地图高亮直接来自 `getLegalActions`，
+用完的槽位会自动从可点目标里消失；顶栏会出现"本回合还可：xxx"提示，
+点「结束回合」（`PASS`）可随时放弃剩余槽位。
+
 > 「移动 0 格」是规则允许的（`RULES.md` §8.1，等价于放弃这次移动），但界面**不给这个落点**：
-> 单击即执行的模型下点到自己脚下等于白扔一个行动，想放弃请用顶栏的「放弃行动」。
+> 单击即执行的模型下点到自己脚下等于白扔一个操作，想收手请用顶栏的「结束回合」。
 > 技能里的"移动 0 格"（Spica 星奔）不受影响，那颗圆钮照旧可用。
 
 ## 对局记录 / 回放（开发面板里）
@@ -20,9 +24,11 @@ React + SVG 界面。**只负责显示状态与产生 Action，从不修改游�
 - 记录格式在 `src/core/Record.ts`：一局压成 **种子 + 行动序列** 的 JSON（引擎是确定性的，所以能逐帧重现）。
 - `transport.ts` 里：`record` 实时给出当前这一局的 JSON，`loadRecord / replayStep / replayBack / stopReplay`
   负责载入与逐步回放；**回放期间 App 会把 legalActions 置空**，棋盘不可操作，看完可以「结束回放」接着玩。
+- 自动回放会在某一步无法继续时停止；每批动画开始前会取消上一批，避免旧动画串到新局面。
+- 联机进行中服务端不下发完整复盘种子，结算后才提供 `record`。
 - 面板入口在「开发面板 → 对局记录 / 回放」：复制记录发给协作者，或把别人的记录粘进来逐步重放。
 
-## 联机（Phase 7）
+## 联机
 
 - `transport-remote.ts` 用 WebSocket 实现**同一个 `GameTransport`**：界面代码一行都不用改，
   `App` 只负责选"本地 / 联机"（`LocalSession` / `RemoteSession`）。
@@ -38,9 +44,9 @@ React + SVG 界面。**只负责显示状态与产生 Action，从不修改游�
 ```
 GameTransport（transport.ts）
    ↓ getSnapshot(): { view: PlayerView, legalActions: Action[] }
-App（App.tsx）＋ interaction.ts（高亮与"点两次"的判定）
+App（App.tsx）＋ interaction.ts（高亮与单击执行判定）
    ↓ components/* 渲染
-确认 / 第二次点击 → transport.dispatch(action)
+点击合法目标 → transport.dispatch(action)
 ```
 
 ## 文件
@@ -128,11 +134,11 @@ tokens < base < layout < board < cards < panels < screens < responsive
 ## 本地运行
 
 ```bash
-npm run dev     # 开发服务器
+npm run dev     # 开发服务器；自动启动本机联机后端
 npm run build   # 类型检查 + 生产构建
 ```
 
 ## 当前状态
 
 完整对局、卡牌化视觉、立绘、逐跳移动、撞击、伤害飘字、回合幕布、地图缩放取景与
-2 ~ 4 人联机界面均已实现。音效与更丰富的 GIF / 粒子演出仍留待后续设计。
+2 ~ 4 人联机界面均已实现。音效与更丰富的粒子演出留待后续设计。
