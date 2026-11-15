@@ -210,6 +210,31 @@
     .card-detail .detail__stats {
       gap: 1px 6px;
     }
+
+    /* 说明书入口上移，避开底部的卡牌扇形；面板在手机上铺满整屏 */
+    .manual-fab {
+      right: 8px;
+      bottom: calc(1.5% + 152px);
+      width: 40px;
+      height: 40px;
+    }
+
+    .manual-overlay {
+      padding: 0;
+    }
+
+    .manual {
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .manual-characters,
+    .manual-cards {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* ---------- 矮屏：把顶栏压薄，给地图让高度 ---------- */
@@ -243,6 +268,11 @@
 
   @media (prefers-reduced-motion: reduce) {
     .turn-indicator__dot {
+      animation: none;
+    }
+
+    .manual-overlay,
+    .manual {
       animation: none;
     }
   }

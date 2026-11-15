@@ -6,7 +6,7 @@
  * 选中卡牌时会在它的右边就地展开介绍。
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Action } from '../core/Action';
 import type {
@@ -24,6 +24,7 @@ import { ActionLogPanel } from './components/ActionLogPanel';
 import { CharacterCard } from './components/CharacterCard';
 import { DetailPanel } from './components/DetailPanel';
 import { HandView, fanLift, fanTilt } from './components/HandView';
+import { Manual, ManualIcon } from './components/Manual';
 import { ActionBar } from './components/ActionBar';
 import { MapView } from './components/MapView';
 import { NewGameScreen } from './components/NewGameScreen';
@@ -491,9 +492,12 @@ export function App() {
     parsePlayerCount(urlParams.get('players')),
   );
   const serverUrl = useMemo(() => urlParams.get('server') ?? defaultServerUrl(), [urlParams]);
+  /** 说明书是全局浮层：开局页、等待页、对局页都能打开。 */
+  const [manualOpen, setManualOpen] = useState(false);
+  const closeManual = useCallback(() => setManualOpen(false), []);
 
-  if (roomId !== null) {
-    return (
+  const session =
+    roomId !== null ? (
       <RemoteSession
         text={text}
         roomId={roomId}
@@ -501,17 +505,31 @@ export function App() {
         serverUrl={serverUrl}
         onLeave={() => setRoomId(null)}
       />
+    ) : (
+      <LocalSession
+        text={text}
+        urlParams={urlParams}
+        onJoinRoom={(nextRoomId, playerCount) => {
+          setRoomId(nextRoomId);
+          setRoomPlayerCount(playerCount);
+        }}
+      />
     );
-  }
+
   return (
-    <LocalSession
-      text={text}
-      urlParams={urlParams}
-      onJoinRoom={(nextRoomId, playerCount) => {
-        setRoomId(nextRoomId);
-        setRoomPlayerCount(playerCount);
-      }}
-    />
+    <>
+      {session}
+      <button
+        type="button"
+        className="manual-fab"
+        onClick={() => setManualOpen(true)}
+        title={text.manual.open}
+        aria-label={text.manual.open}
+      >
+        <ManualIcon />
+      </button>
+      {manualOpen ? <Manual text={text} onClose={closeManual} /> : null}
+    </>
   );
 }
 

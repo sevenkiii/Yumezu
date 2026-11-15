@@ -24,4 +24,12 @@ export function resolveLocale(input: string | null | undefined): Locale {
 }
 
 export { zhCN };
-export type { Locale, UiText, CharacterText, CardText, StatusText } from './types';
+export type {
+  Locale,
+  UiText,
+  CharacterText,
+  CardText,
+  StatusText,
+  ManualTab,
+  ManualSection,
+} from './types';

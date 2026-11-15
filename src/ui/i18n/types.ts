@@ -11,6 +11,14 @@ import type { CardCategory } from '../../cards/Card';
 
 export type Locale = 'zh-CN';
 
+/** 说明书的三页。 */
+export type ManualTab = 'rules' | 'characters' | 'cards';
+
+export interface ManualSection {
+  readonly title: string;
+  readonly lines: readonly string[];
+}
+
 export interface CharacterText {
   readonly name: string;
   /** 战斗定位，例如"单体爆发"。 */
@@ -201,6 +209,18 @@ export interface UiText {
      */
     readonly actedMove: (who: string) => string;
     readonly actedAttack: (who: string) => string;
+  };
+  /** 说明书：玩法文案是人工撰写的，角色 / 功能牌 / 状态数值从定义生成。 */
+  readonly manual: {
+    readonly open: string;
+    readonly title: string;
+    readonly close: string;
+    readonly tabs: Record<ManualTab, string>;
+    readonly sections: readonly ManualSection[];
+    readonly statusTitle: string;
+    readonly skillLabel: string;
+    readonly hpLabel: string;
+    readonly poolHint: string;
   };
   readonly character: Record<CharacterTypeId, CharacterText>;
   readonly skillName: Record<SkillId, string>;

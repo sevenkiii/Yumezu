@@ -324,4 +324,25 @@
   .hp-avatar--open {
     box-shadow: 0 0 0 2px var(--accent);
   }
+
+  /* 说明书入口：固定在右下角，开局页 / 等待页 / 对局页都能打开 */
+  .manual-fab,
+  .manual-fab:hover:not(:disabled) {
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 120;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    min-height: 0;
+    padding: 0;
+    color: var(--accent);
+    background: var(--panel-strong);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    box-shadow: var(--shadow-float);
+  }
 }

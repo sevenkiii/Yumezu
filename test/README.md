@@ -55,4 +55,4 @@ npm run simulate -- --games 50 --json-full   # 输出 JSON（含逐局明细）
 - 涉及随机的测试必须固定 seed。
 - 规则变更时先更新 `RULES.md`，再更新对应测试。
 
-> 状态：22 个测试文件 / 184 个测试通过（含 `turn-slots.test.ts` 与 `status-duration.test.ts`）。
+> 状态：22 个测试文件 / 188 个测试通过（含 `turn-slots.test.ts` 与 `status-duration.test.ts`）。

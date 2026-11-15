@@ -19,7 +19,7 @@ npm run server   # 生产/联机入口：0.0.0.0:8787，同时托管 dist/
 ```
 
 质量检查顺序：`npm run lint` → `npm run format:check` → `npm run typecheck` → `npm run test`。
-当前基线：**22 个测试文件 / 184 个测试通过**。
+当前基线：**22 个测试文件 / 188 个测试通过**。
 
 ## 项目结构
 

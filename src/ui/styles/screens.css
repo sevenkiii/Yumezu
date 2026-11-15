@@ -253,4 +253,305 @@
       transform: none;
     }
   }
+
+  /* ---------- 说明书：全局浮层，玩法 / 角色 / 功能牌三页 ---------- */
+
+  .manual-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 210;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    background: rgba(34, 48, 74, 0.42);
+    backdrop-filter: blur(2px);
+    animation: result-veil 220ms ease-out;
+  }
+
+  .manual {
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 100%);
+    max-height: min(84vh, 780px);
+    background: var(--panel-strong);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-float);
+    overflow: hidden;
+    animation: result-card 260ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  }
+
+  .manual__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px 10px;
+  }
+
+  .manual__title {
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+
+  /* 关闭 / tab 按钮要显式压住全局 button:hover 的纯白底 */
+  .manual__close,
+  .manual__close:hover:not(:disabled) {
+    width: 32px;
+    height: 32px;
+    min-height: 0;
+    padding: 0;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--text-soft);
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .manual__tabs {
+    display: flex;
+    gap: 6px;
+    padding: 0 20px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .manual__tab,
+  .manual__tab:hover:not(:disabled) {
+    min-height: 0;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: var(--text-soft);
+    background: transparent;
+    border-color: transparent;
+    border-radius: 8px;
+  }
+
+  .manual__tab--active,
+  .manual__tab--active:hover:not(:disabled) {
+    color: #ffffff;
+    background: var(--accent);
+    font-weight: 600;
+  }
+
+  .manual__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 20px 24px;
+    color: var(--text-soft);
+  }
+
+  .manual__note {
+    margin: 0 0 14px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .manual-section + .manual-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .manual-section__title {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .manual-section__lines {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 12.5px;
+    line-height: 1.75;
+  }
+
+  .manual-section__lines li + li {
+    margin-top: 4px;
+  }
+
+  .manual-statuses {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+  }
+
+  .manual-statuses__row {
+    display: flex;
+    gap: 10px;
+    font-size: 12.5px;
+  }
+
+  .manual-statuses dt {
+    min-width: 52px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .manual-statuses dd {
+    margin: 0;
+  }
+
+  .manual-characters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .manual-char {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: color-mix(in srgb, var(--bg-deep) 55%, #ffffff);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .manual-char__portrait {
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    overflow: hidden;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+  }
+
+  .manual-char__portrait svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 缺立绘时退回字母圆，不把素材当成必需项 */
+  .manual-char__fallback {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .manual-char__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .manual-char__name {
+    margin: 0 0 4px;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .manual-char__role {
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .manual-char__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 10px;
+    margin: 0 0 6px;
+  }
+
+  .manual-char__stats > div {
+    display: flex;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .manual-char__stats dt {
+    color: var(--muted);
+  }
+
+  .manual-char__stats dd {
+    margin: 0;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .manual-char__skill {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.6;
+  }
+
+  .manual-char__skill strong {
+    display: block;
+    color: var(--text);
+  }
+
+  .manual-char__skill span {
+    display: block;
+  }
+
+  .manual-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .manual-card {
+    display: flex;
+    gap: 8px;
+    padding: 8px 10px;
+    background: color-mix(in srgb, var(--bg-deep) 45%, #ffffff);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .manual-card__tag {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-soft);
+    background: color-mix(in srgb, var(--muted) 12%, #ffffff);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+  }
+
+  .manual-card__tag--ATTACK {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 12%, #ffffff);
+    border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+  }
+
+  .manual-card__tag--DEFENSE {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, #ffffff);
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  .manual-card__tag--CONTROL {
+    color: var(--warn);
+    background: color-mix(in srgb, var(--warn) 12%, #ffffff);
+    border-color: color-mix(in srgb, var(--warn) 30%, transparent);
+  }
+
+  .manual-card__body {
+    min-width: 0;
+  }
+
+  .manual-card__name {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text);
+  }
+
+  .manual-card__body p {
+    margin: 2px 0 0;
+    font-size: 11.5px;
+    line-height: 1.55;
+  }
 }

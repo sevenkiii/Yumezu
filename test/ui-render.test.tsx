@@ -7,8 +7,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import type { Action } from '../src/core/Action';
+import { cardDefinition } from '../src/cards/Card';
+import { CARD_POOL } from '../src/cards/CardPool';
+import { characterDefinition } from '../src/characters/Character';
 import { createGame, createGameFromSeed, getLegalActions } from '../src/core/GameEngine';
-import { findCharacter } from '../src/core/GameState';
+import { CHARACTER_TYPE_IDS, STATUS_TYPES, findCharacter } from '../src/core/GameState';
 import { getViewFor } from '../src/core/View';
 import { PHASE1_MAP, PHASE1_SPAWN_CENTERS } from '../src/map/fixtures';
 import { App, GameScreen } from '../src/ui/App';
@@ -17,6 +20,7 @@ import { ActionLogPanel } from '../src/ui/components/ActionLogPanel';
 import { CharacterCard } from '../src/ui/components/CharacterCard';
 import { HandView } from '../src/ui/components/HandView';
 import { MapView } from '../src/ui/components/MapView';
+import { Manual } from '../src/ui/components/Manual';
 import { EnemyStrip } from '../src/ui/components/EnemyStrip';
 import { HpAvatar } from '../src/ui/components/HpAvatar';
 import { ResultOverlay } from '../src/ui/components/ResultOverlay';
@@ -77,6 +81,59 @@ describe('界面渲染冒烟测试', () => {
     expect(html).toContain('enemy-strip');
     expect(html).toContain('turn-indicator--self');
     expect(html).toContain(text.format.yourTurn(playerLabel(currentPlayer, text)));
+  });
+
+  it('开局界面就有说明书入口，且默认收起', () => {
+    const html = renderToStaticMarkup(<App />);
+    expect(html).toContain('manual-fab');
+    expect(html).toContain(text.manual.open);
+    expect(html).not.toContain('manual-overlay');
+  });
+
+  it('说明书 · 玩法页：六个小节、状态表与三个页签', () => {
+    const html = renderToStaticMarkup(<Manual text={text} initialTab="rules" onClose={noop} />);
+    expect(html).toContain(text.manual.title);
+    expect(html).toContain(text.manual.statusTitle);
+    for (const tab of ['rules', 'characters', 'cards'] as const) {
+      expect(html).toContain(text.manual.tabs[tab]);
+    }
+    for (const section of text.manual.sections) {
+      expect(html).toContain(section.title);
+      expect(html).toContain(section.lines[0] as string);
+    }
+    for (const status of STATUS_TYPES) expect(html).toContain(text.status[status].name);
+    // 分页确实生效：玩法页不该把功能牌页的内容一起渲染出来
+    expect(html).not.toContain(text.manual.poolHint);
+  });
+
+  it('说明书 · 角色页：六名角色与数值都从定义读', () => {
+    const html = renderToStaticMarkup(
+      <Manual text={text} initialTab="characters" onClose={noop} />,
+    );
+    for (const typeId of CHARACTER_TYPE_IDS) {
+      expect(html).toContain(text.character[typeId].name);
+      expect(html).toContain(text.character[typeId].skillDescription);
+    }
+    // 调平衡后说明书会自动跟着变（这里用 Mikage 的移动范围作锚点）
+    expect(html).toContain(
+      '<dt>' +
+        text.stat.moveRange +
+        '</dt><dd>' +
+        characterDefinition('Mikage').moveRange +
+        '</dd>',
+    );
+    expect(html).toContain('<image');
+  });
+
+  it('说明书 · 功能牌页：11 张牌、类别与文案都从定义读', () => {
+    const html = renderToStaticMarkup(<Manual text={text} initialTab="cards" onClose={noop} />);
+    expect(html).toContain(text.manual.poolHint);
+    for (const cardId of CARD_POOL) {
+      expect(html).toContain(text.card[cardId].name);
+      expect(html).toContain(text.card[cardId].description);
+    }
+    expect(html).toContain('manual-card__tag--' + cardDefinition('BlockRoad').category);
+    expect(CARD_POOL).toHaveLength(11);
   });
 
   it('一个回合只用一个槽位时，顶栏会提示剩下的操作', () => {
