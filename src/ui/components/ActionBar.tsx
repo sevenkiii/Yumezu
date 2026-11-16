@@ -27,6 +27,10 @@ export function ActionBar({ text, ui, highlights, onDiscard, onChooseStatus }: A
 
   return (
     <>
+      {/*
+       * 只讲"这一步该点什么"。本轮还剩哪个操作槽位，已经由这句提示本身表达
+       * （只剩功能牌时就是"选择功能牌"），不再额外跟一句，手机端才不会被挤到换行。
+       */}
       <div className="map-hint">{text.prompt[promptFor(ui, highlights)]}</div>
 
       {showActions ? (

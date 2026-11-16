@@ -84,6 +84,7 @@ export interface UiHighlights {
 export type PromptCode =
   | 'IDLE'
   | 'SELECT_CHARACTER'
+  | 'SELECT_CARD'
   | 'SELECT_TARGET_OR_DESTINATION'
   | 'SELECT_DESTINATION'
   | 'SELECT_TARGET'
@@ -435,8 +436,17 @@ export function placeDeployCharacter(
 export function promptFor(ui: UiState, highlights: UiHighlights): PromptCode {
   const pending = ui.pending;
   switch (pending.kind) {
-    case 'IDLE':
-      return ui.selectedCharacterId === null ? 'SELECT_CHARACTER' : 'SELECT_TARGET_OR_DESTINATION';
+    case 'IDLE': {
+      if (ui.selectedCharacterId !== null) return 'SELECT_TARGET_OR_DESTINATION';
+      // 提示要跟"这一步还能做什么"一致：角色槽位用完后只剩功能牌操作，
+      // 这时再说"选择一名己方角色"就是在指一条走不通的路。
+      const canPickCharacter = highlights.selectableCharacters.size > 0;
+      const canPlayCard = highlights.playableCards.size > 0;
+      if (canPickCharacter && canPlayCard) return 'IDLE';
+      if (canPickCharacter) return 'SELECT_CHARACTER';
+      if (canPlayCard) return 'SELECT_CARD';
+      return 'IDLE';
+    }
     case 'MOVE':
       return pending.to === null ? 'SELECT_DESTINATION' : 'READY_TO_EXECUTE';
     case 'ATTACK':

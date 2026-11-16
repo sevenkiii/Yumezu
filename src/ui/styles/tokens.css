@@ -24,6 +24,11 @@
     --warn: #cf7a1f; /* 目标高亮 */
     --danger: #c8503f; /* 伤害、封路 */
 
+    /* 技能圆钮：深色牌面上的浅蓝系（就绪 / 冷却中 / 瞄准光晕） */
+    --skill-ready: #8fe4ff;
+    --skill-cooling: #3f8fb8;
+    --skill-glow: rgba(143, 228, 255, 0.5);
+
     /* 形状 */
     --radius: 12px;
     /* 顶栏 / 棋盘这类大面板 */

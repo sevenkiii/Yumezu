@@ -144,13 +144,14 @@
     .char-card__skill {
       /* 同桌面：20px = 6px 空隙 + 12px 卡片自身位移 + 约 2px 缩放 */
       bottom: calc(100% + 20px);
-      width: 44px;
-      height: 44px;
+      width: 46px;
+      height: 46px;
     }
 
+    /* 内盘跟着外圈自适应（环宽由外层的 padding 决定） */
     .char-card__skill-inner {
-      width: 35px;
-      height: 35px;
+      width: 100%;
+      height: 100%;
     }
 
     .char-card__skill-name {
@@ -273,6 +274,11 @@
 
     .manual-overlay,
     .manual {
+      animation: none;
+    }
+
+    /* 瞄准态的呼吸灯直接常亮，别一直闪 */
+    .char-card__skill--armed {
       animation: none;
     }
   }

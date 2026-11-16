@@ -152,11 +152,6 @@ export const zhCN: UiText = {
     turn: (index) => '回合 ' + index,
     currentPlayer: (player) => player + ' 行动中',
     yourTurn: (player) => player + ' · 轮到你行动',
-    remainingSlot: (characterUsed, cardUsed) => {
-      if (characterUsed && !cardUsed) return '本回合还可：功能牌操作';
-      if (cardUsed && !characterUsed) return '本回合还可：角色操作';
-      return '';
-    },
     hp: (hp, maxHp) => hp + ' / ' + maxHp,
     cooldown: (value) => (value <= 0 ? '可用' : 'CD ' + value),
     handCount: (count) => count + ' 张',
@@ -365,19 +360,20 @@ export const zhCN: UiText = {
   },
 
   prompt: {
-    IDLE: '选择一名角色，或使用一张功能牌',
-    SELECT_CHARACTER: '选择一名己方角色',
-    SELECT_DESTINATION: '在地图上选择落点',
+    IDLE: '选择角色或功能牌',
+    SELECT_CHARACTER: '选择己方角色',
+    SELECT_CARD: '选择功能牌',
+    SELECT_DESTINATION: '选择落点',
     SELECT_TARGET: '选择目标',
-    SELECT_NODE: '选择地图上的一个节点',
-    SELECT_EDGE: '选择地图上的一条边',
+    SELECT_NODE: '选择节点',
+    SELECT_EDGE: '选择边',
     SELECT_STATUS: '选择要移除的状态',
-    SELECT_TARGET_OR_DESTINATION: '点高亮节点移动、点敌人普攻；技能点角色卡上的圆钮',
-    READY_TO_EXECUTE: '已选定目标',
+    SELECT_TARGET_OR_DESTINATION: '点节点移动 · 点敌人普攻',
+    READY_TO_EXECUTE: '已选定',
     READY_TO_CONFIRM: '已选定',
     DEPLOY_SELECT_CHARACTER: '选择要放置的角色',
-    DEPLOY_SELECT_NODE: '点击自己的出生区域放置',
-    DEPLOY_READY: '全部放置完成，点击「确认行动」',
+    DEPLOY_SELECT_NODE: '点击出生区域放置',
+    DEPLOY_READY: '放置完成，点「确认行动」',
   },
 
   status: {

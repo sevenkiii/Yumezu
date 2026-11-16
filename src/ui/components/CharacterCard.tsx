@@ -123,20 +123,21 @@ export function CharacterCard({
         </button>
       </div>
 
-      {/* 选中后才浮出来：外圈是 CD 环，里面先放技能名，以后换成图标即可 */}
+      {/* 选中后才浮出来：外圈是充能环，内圈是深色圆盘 + 技能名 */}
       {selected ? (
         <button
           type="button"
-          className="char-card__skill"
+          className={'char-card__skill' + (skillArmed ? ' char-card__skill--armed' : '')}
           onClick={onSkill}
           disabled={onSkill === undefined || !canUseSkill}
+          aria-label={characterText.skillName + '：' + characterText.skillDescription}
           style={{
             background:
               'conic-gradient(' +
-              (character.skillCd <= 0 ? '#e7c887' : '#7fd1ff') +
+              (character.skillCd <= 0 ? 'var(--skill-ready)' : 'var(--skill-cooling)') +
               ' ' +
               (cdProgress * 100).toFixed(0) +
-              '%, rgba(0,0,0,0.35) 0)',
+              '%, rgba(255, 255, 255, 0.16) 0)',
           }}
           title={characterText.skillName + '：' + characterText.skillDescription}
         >

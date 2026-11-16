@@ -171,8 +171,6 @@ export interface UiText {
     readonly turn: (index: number) => string;
     readonly currentPlayer: (player: string) => string;
     readonly yourTurn: (player: string) => string;
-    /** 一个回合内还剩下的操作槽位提示；两个都未用时返回空串。 */
-    readonly remainingSlot: (characterUsed: boolean, cardUsed: boolean) => string;
     readonly hp: (hp: number, maxHp: number) => string;
     readonly cooldown: (value: number) => string;
     readonly handCount: (count: number) => string;

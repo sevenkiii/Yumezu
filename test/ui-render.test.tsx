@@ -180,19 +180,18 @@ describe('界面渲染冒烟测试', () => {
     expect(CARD_POOL).toHaveLength(11);
   });
 
-  it('一个回合只用一个槽位时，顶栏会提示剩下的操作', () => {
+  it('提示胶囊只有一句主提示：用掉角色槽位后它自己变成「选择功能牌」', () => {
     const transport = createLocalTransport({ mapSeed: 'render-map', gameSeed: 'render-game' });
-    expect(renderToStaticMarkup(<GameScreen transport={transport} text={text} />)).not.toContain(
-      'slot-chip',
-    );
-
     const move = transport.getSnapshot().legalActions.find((action) => action.type === 'MOVE');
     expect(move).toBeDefined();
     transport.dispatch(move as Action);
 
     const html = renderToStaticMarkup(<GameScreen transport={transport} text={text} />);
-    expect(html).toContain('slot-chip');
-    expect(html).toContain(text.format.remainingSlot(true, false));
+    expect(html).toContain('map-hint');
+    expect(html).toContain(text.prompt.SELECT_CARD);
+    // 不再挂第二段槽位文字
+    expect(html).not.toContain('map-hint__slot');
+    expect(html).not.toContain('slot-chip');
     // 回合还没结束，仍然轮到自己
     expect(html).toContain('turn-indicator--self');
   });
@@ -237,6 +236,24 @@ describe('界面渲染冒烟测试', () => {
     expect(html).toContain(text.character.Nana.skillName);
     expect(html).toContain('char-card__art-img');
     expect(html).toContain('char-card--selected');
+    // 没按下技能时，圆钮不该带高亮
+    expect(html).not.toContain('char-card__skill--armed');
+
+    // 按下技能、等玩家选目标：圆钮自己亮起来
+    const aiming = renderToStaticMarkup(
+      <CharacterCard
+        text={text}
+        character={character}
+        selected={true}
+        selectable={true}
+        canUseSkill={true}
+        skillArmed={true}
+        onSelect={noop}
+        onSkill={noop}
+      />,
+    );
+    expect(aiming).toContain('char-card__skill--armed');
+    expect(aiming).toContain('char-card--aiming');
   });
 
   it('对手条：按玩家分组、头像带血量环、点开才有详情', () => {
@@ -331,9 +348,9 @@ describe('界面渲染冒烟测试', () => {
         />,
       );
 
-    // 未选择：只有提示胶囊
+    // 未选择：两个槽位都可用，提示同时给出角色与功能牌两条路
     const idle = barOf(INITIAL_UI_STATE);
-    expect(idle).toContain(text.prompt.SELECT_CHARACTER);
+    expect(idle).toContain(text.prompt.IDLE);
     expect(idle).not.toContain('map-actions');
 
     // 选中角色：提示变化，仍无浮动按钮
@@ -352,6 +369,28 @@ describe('界面渲染冒烟测试', () => {
     // 选牌后才浮现「弃牌」
     const cardUi = selectCard(INITIAL_UI_STATE, state.players.P1.hand[0]!.id, 'FirstAid');
     expect(barOf(cardUi)).toContain(text.action.discard);
+  });
+
+  it('角色槽位用完后，提示改成「选择一张功能牌」而不是让玩家去选角色', () => {
+    const state = battle();
+    // 只剩功能牌操作时，getLegalActions 里没有 MOVE/ATTACK/USE_SKILL
+    const cardOnly = computeHighlights(
+      getLegalActions(state).filter(
+        (action) => action.type === 'USE_CARD' || action.type === 'DISCARD',
+      ),
+      INITIAL_UI_STATE,
+    );
+    const html = renderToStaticMarkup(
+      <ActionBar
+        text={text}
+        ui={INITIAL_UI_STATE}
+        highlights={cardOnly}
+        onDiscard={noop}
+        onChooseStatus={noop}
+      />,
+    );
+    expect(html).toContain(text.prompt.SELECT_CARD);
+    expect(html).not.toContain(text.prompt.SELECT_CHARACTER);
   });
 
   it('默认开局由核心随机部署，直接进入战斗', () => {

@@ -10,7 +10,7 @@
 | `EnemyStrip.tsx`     | 顶栏的其他玩家条：按座位分组，点某个头像就地展开详情                                  |
 | `HpAvatar.tsx`       | 角色头像：圆形立绘 + 一圈剩余血量环                                                   |
 | `HandView.tsx`       | 手牌（默认全展开，含弃牌按钮）                                                        |
-| `ActionBar.tsx`      | 地图提示胶囊 + 按需浮层（弃牌 / 净化选状态）                                          |
+| `ActionBar.tsx`      | 地图顶部的一句提示胶囊 + 按需浮层（弃牌 / 净化选状态）                                 |
 | `DetailPanel.tsx`    | 选中卡牌后就地展开的介绍（名字、HP、技能全文、数值）                                  |
 | `EffectsLayer.tsx`   | 由事件驱动的表现层：伤害飘字 / 命中环 / 移动轨迹 / 阵亡涟漪                           |
 | `ActionLogPanel.tsx` | 行动记录（已过滤对手手牌内容）                                                        |

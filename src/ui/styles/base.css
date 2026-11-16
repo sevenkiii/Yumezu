@@ -129,14 +129,6 @@
     font-weight: 600;
   }
 
-  /* 一个回合还有槽位没用时，顶栏提示"还可以做什么" */
-  .slot-chip {
-    color: #1d4e86;
-    background: color-mix(in srgb, var(--accent) 12%, #ffffff);
-    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-    font-weight: 600;
-  }
-
   /* 回放中：提醒棋盘此刻不可操作 */
   .chip--replay {
     color: #ffffff;
