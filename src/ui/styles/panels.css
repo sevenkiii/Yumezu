@@ -339,6 +339,13 @@
     resize: vertical;
   }
 
+  /* 联机模式：只读的记录预览，剪贴板不可用时也能全选手动复制 */
+  .replay-panel__text--readonly {
+    min-height: 88px;
+    background: color-mix(in srgb, var(--bg-deep) 55%, #ffffff);
+    color: var(--text-soft);
+  }
+
   .replay-panel__notice {
     margin: 4px 0 0;
     color: var(--accent);

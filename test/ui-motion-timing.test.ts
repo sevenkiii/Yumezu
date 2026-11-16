@@ -33,27 +33,23 @@ function lunge(characterId: CharacterId): TokenLunge {
 }
 
 describe('走位与撞击的节奏', () => {
-  it('走位时长 = 跳数 × 每跳时长', () => {
+  it('走位时长按跳数计，动画窗口要放得下最长的一段', () => {
     expect(trailDurationMs(trail(ALICE, 1))).toBe(HOP_MS);
     expect(trailDurationMs(trail(ALICE, 3))).toBe(HOP_MS * 3);
+    // 最长的一段：走 4 跳 + 撞击
+    expect(MOTION_WINDOW_MS).toBeGreaterThanOrEqual(trailDurationMs(trail(ALICE, 4)) + LUNGE_MS);
   });
 
-  it('没走位的角色，撞击立刻开始', () => {
-    const durations = trailDurationsOf([trail(BOB, 2)]);
-    expect(lungeDelayMs(lunge(ALICE), durations, 0)).toBe(0);
-  });
+  it('撞击要等出手方走完，同一批里的第二下再错开', () => {
+    // 没走位：立刻开始
+    expect(lungeDelayMs(lunge(ALICE), trailDurationsOf([trail(BOB, 2)]), 0)).toBe(0);
 
-  it('先走位再撞：撞击要等出手方走完（星奔这类）', () => {
+    // 先走位再撞（星奔这类）：等出手方走完
     const walk = trail(ALICE, 3);
     const durations = trailDurationsOf([walk, trail(BOB, 1)]);
     expect(lungeDelayMs(lunge(ALICE), durations, 0)).toBe(trailDurationMs(walk));
-    // 同一批里的第二下再错开一点
     expect(lungeDelayMs(lunge(BOB), durations, 1)).toBe(
       trailDurationMs(trail(BOB, 1)) + STAGGER_MS,
     );
-  });
-
-  it('动画窗口够放完最长的一段：走 4 跳 + 撞击', () => {
-    expect(MOTION_WINDOW_MS).toBeGreaterThanOrEqual(trailDurationMs(trail(ALICE, 4)) + LUNGE_MS);
   });
 });

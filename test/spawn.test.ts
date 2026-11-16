@@ -40,16 +40,15 @@ describe('出生点选择', () => {
       );
       expect(gap).toBeGreaterThanOrEqual(5);
     }
-  });
 
-  it('Phase 1 固定地图的出生中心仍在合格候选之中', () => {
-    const candidates = listSpawnCandidates(PHASE1_MAP, DEFAULT_SPAWN_PARAMS);
-    const found = candidates.some(
-      (candidate) =>
-        candidate.centers.P1 === PHASE1_SPAWN_CENTERS.P1 &&
-        candidate.centers.P2 === PHASE1_SPAWN_CENTERS.P2,
-    );
-    expect(found).toBe(true);
+    // 固定地图用的那组中心必须是合格候选之一
+    expect(
+      candidates.some(
+        (candidate) =>
+          candidate.centers.P1 === PHASE1_SPAWN_CENTERS.P1 &&
+          candidate.centers.P2 === PHASE1_SPAWN_CENTERS.P2,
+      ),
+    ).toBe(true);
   });
 
   it('地图中心是偏心距最小的节点', () => {
@@ -60,7 +59,7 @@ describe('出生点选择', () => {
     expect(eccentricity(center)).toBe(best);
   });
 
-  it('相同随机流选出相同中心；没有候选时返回 null', () => {
+  it('选择可复现、无候选时返回 null；computeSpawnInfo 给出中心与区域', () => {
     const first = selectSpawnCenters(PHASE1_MAP, cursor('same'), DEFAULT_SPAWN_PARAMS);
     const second = selectSpawnCenters(PHASE1_MAP, cursor('same'), DEFAULT_SPAWN_PARAMS);
     expect(first).toEqual(second);
@@ -71,9 +70,7 @@ describe('出生点选择', () => {
       distanceRange: [1, 1],
     });
     expect(impossible).toBeNull();
-  });
 
-  it('computeSpawnInfo 给出中心与区域', () => {
     const spawn = computeSpawnInfo(PHASE1_MAP, PHASE1_SPAWN_CENTERS);
     expect(spawn.P1.center).toBe(PHASE1_SPAWN_CENTERS.P1);
     expect(spawn.P1.region).toEqual([0, 1, 6]);

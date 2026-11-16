@@ -14,6 +14,8 @@
 | `characters.test.ts`       | 6 名角色的技能行为                                                                        |
 | `cards.test.ts`            | 11 张功能牌的效果与非法条件                                                               |
 | `engine.test.ts`           | 部署、回合结构、CD、胜负、视图、合法行动枚举                                              |
+| `turn-slots.test.ts`       | 双操作槽回合：顺序不限、同槽位不可重复、PASS 收手、封路按回合到期                        |
+| `status-duration.test.ts`  | 冻结 / 封技按目标自己的回合计时（含四人局跨座位）                                        |
 | `multiplayer.test.ts`      | 2 ~ 4 人座位、人数缩放地图、出生区域、轮转跳过、任意敌人、四人整局与隐私                  |
 | `server.test.ts`           | 权威对局、房间人数、断线重连、中途记录隐私、完整对局                                      |
 | `remote-transport.test.ts` | 真实 WebSocket 客户端联机、按座位分发行动、刷新重连                                       |
@@ -54,5 +56,6 @@ npm run simulate -- --games 50 --json-full   # 输出 JSON（含逐局明细）
 - 每个测试都能独立运行，不依赖执行顺序。
 - 涉及随机的测试必须固定 seed。
 - 规则变更时先更新 `RULES.md`，再更新对应测试。
+- **一个用例覆盖一个主题**：同一行为的正反例写在同一个 `it` 里，不要拆成多条细碎用例。
 
-> 状态：22 个测试文件 / 188 个测试通过（含 `turn-slots.test.ts` 与 `status-duration.test.ts`）。
+> 状态：22 个测试文件 / 157 个测试通过。

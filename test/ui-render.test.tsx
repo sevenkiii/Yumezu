@@ -21,6 +21,7 @@ import { CharacterCard } from '../src/ui/components/CharacterCard';
 import { HandView } from '../src/ui/components/HandView';
 import { MapView } from '../src/ui/components/MapView';
 import { Manual } from '../src/ui/components/Manual';
+import { ReplayPanel } from '../src/ui/components/ReplayPanel';
 import { EnemyStrip } from '../src/ui/components/EnemyStrip';
 import { HpAvatar } from '../src/ui/components/HpAvatar';
 import { ResultOverlay } from '../src/ui/components/ResultOverlay';
@@ -32,6 +33,7 @@ import {
   clickCharacter,
   computeHighlights,
   selectCard,
+  type UiState,
 } from '../src/ui/interaction';
 import { createLocalTransport } from '../src/ui/transport';
 import { createBattleState } from './support/fixtures';
@@ -83,6 +85,51 @@ describe('界面渲染冒烟测试', () => {
     expect(html).toContain(text.format.yourTurn(playerLabel(currentPlayer, text)));
   });
 
+  it('记录面板：联机进行中不给复制入口，结束后给可复制的全文', () => {
+    const callbacks = { onLoad: () => true, onStop: noop, onStep: () => true, onBack: noop };
+    const panelOf = (record: string, readOnly: boolean) =>
+      renderToStaticMarkup(
+        <ReplayPanel
+          text={text}
+          record={record}
+          replay={null}
+          readOnly={readOnly}
+          {...callbacks}
+        />,
+      );
+
+    // 进行中：服务端没有记录，就不摆按钮和空框
+    const pending = panelOf('', true);
+    expect(pending).toContain(text.dev.replay.pendingHint);
+    expect(pending).not.toContain('>' + text.dev.replay.copy + '<');
+    expect(pending).not.toContain('replay-panel__row');
+    expect(pending).not.toContain('replay-panel__text');
+
+    // 结束后：按钮 + 只读全文（http 下剪贴板不可用时也能手动复制）
+    const record = JSON.stringify({
+      version: 1,
+      mapSeed: 'm',
+      gameSeed: 'copy-check',
+      playerCount: 4,
+      maxTurns: null,
+      actions: [],
+    });
+    const done = panelOf(record, true);
+    expect(done).toContain(text.dev.replay.readonlyHint);
+    expect(done).toContain('>' + text.dev.replay.copy + '<');
+    expect(done).toContain('replay-panel__text--readonly');
+    expect(done).toContain('copy-check');
+    expect(done).not.toContain('>' + text.dev.replay.load + '<');
+
+    // 本地：粘贴框可编辑，复制 / 载入都在
+    const local = panelOf('{}', false);
+    expect(local).toContain(text.dev.replay.hint);
+    expect(local).toContain('>' + text.dev.replay.copy + '<');
+    expect(local).toContain('>' + text.dev.replay.load + '<');
+    expect(local).toContain(text.dev.replay.placeholder);
+    expect(local).not.toContain('replay-panel__text--readonly');
+  });
+
   it('开局界面就有说明书入口，且默认收起', () => {
     const html = renderToStaticMarkup(<App />);
     expect(html).toContain('manual-fab');
@@ -90,49 +137,46 @@ describe('界面渲染冒烟测试', () => {
     expect(html).not.toContain('manual-overlay');
   });
 
-  it('说明书 · 玩法页：六个小节、状态表与三个页签', () => {
-    const html = renderToStaticMarkup(<Manual text={text} initialTab="rules" onClose={noop} />);
-    expect(html).toContain(text.manual.title);
-    expect(html).toContain(text.manual.statusTitle);
+  it('说明书：三个页签分别渲染玩法、六名角色与 11 张功能牌', () => {
+    const pageOf = (tab: 'rules' | 'characters' | 'cards') =>
+      renderToStaticMarkup(<Manual text={text} initialTab={tab} onClose={noop} />);
+
+    const rules = pageOf('rules');
+    expect(rules).toContain(text.manual.title);
+    expect(rules).toContain(text.manual.statusTitle);
     for (const tab of ['rules', 'characters', 'cards'] as const) {
-      expect(html).toContain(text.manual.tabs[tab]);
+      expect(rules).toContain(text.manual.tabs[tab]);
     }
     for (const section of text.manual.sections) {
-      expect(html).toContain(section.title);
-      expect(html).toContain(section.lines[0] as string);
+      expect(rules).toContain(section.title);
+      expect(rules).toContain(section.lines[0] as string);
     }
-    for (const status of STATUS_TYPES) expect(html).toContain(text.status[status].name);
-    // 分页确实生效：玩法页不该把功能牌页的内容一起渲染出来
-    expect(html).not.toContain(text.manual.poolHint);
-  });
+    for (const status of STATUS_TYPES) expect(rules).toContain(text.status[status].name);
+    // 分页生效：玩法页不该把功能牌页的内容一起渲染出来
+    expect(rules).not.toContain(text.manual.poolHint);
 
-  it('说明书 · 角色页：六名角色与数值都从定义读', () => {
-    const html = renderToStaticMarkup(
-      <Manual text={text} initialTab="characters" onClose={noop} />,
-    );
+    const characters = pageOf('characters');
     for (const typeId of CHARACTER_TYPE_IDS) {
-      expect(html).toContain(text.character[typeId].name);
-      expect(html).toContain(text.character[typeId].skillDescription);
+      expect(characters).toContain(text.character[typeId].name);
+      expect(characters).toContain(text.character[typeId].skillDescription);
     }
-    // 调平衡后说明书会自动跟着变（这里用 Mikage 的移动范围作锚点）
-    expect(html).toContain(
+    // 数值从定义读：调平衡后说明书会自动跟着变（用 Mikage 的移动范围作锚点）
+    expect(characters).toContain(
       '<dt>' +
         text.stat.moveRange +
         '</dt><dd>' +
         characterDefinition('Mikage').moveRange +
         '</dd>',
     );
-    expect(html).toContain('<image');
-  });
+    expect(characters).toContain('<image');
 
-  it('说明书 · 功能牌页：11 张牌、类别与文案都从定义读', () => {
-    const html = renderToStaticMarkup(<Manual text={text} initialTab="cards" onClose={noop} />);
-    expect(html).toContain(text.manual.poolHint);
+    const cards = pageOf('cards');
+    expect(cards).toContain(text.manual.poolHint);
     for (const cardId of CARD_POOL) {
-      expect(html).toContain(text.card[cardId].name);
-      expect(html).toContain(text.card[cardId].description);
+      expect(cards).toContain(text.card[cardId].name);
+      expect(cards).toContain(text.card[cardId].description);
     }
-    expect(html).toContain('manual-card__tag--' + cardDefinition('BlockRoad').category);
+    expect(cards).toContain('manual-card__tag--' + cardDefinition('BlockRoad').category);
     expect(CARD_POOL).toHaveLength(11);
   });
 
@@ -195,7 +239,7 @@ describe('界面渲染冒烟测试', () => {
     expect(html).toContain('char-card--selected');
   });
 
-  it('对手条渲染成一排头像（血量环在），点开才有详情', () => {
+  it('对手条：按玩家分组、头像带血量环、点开才有详情', () => {
     const state = battle();
     const html = renderToStaticMarkup(
       <EnemyStrip view={getViewFor(state, 'P1')} text={text} title={text.panel.enemyTeam} />,
@@ -205,35 +249,30 @@ describe('界面渲染冒烟测试', () => {
     expect(html).toContain('hp-avatar__value');
     // 默认不展开：详情面板要点头像才出现
     expect(html).not.toContain('enemy-strip__detail');
-  });
 
-  it('四人局按玩家分组渲染另外三家的全部头像', () => {
-    const state = createGameFromSeed({
+    // 四人局：另外三家各 3 个头像
+    const four = createGameFromSeed({
       mapSeed: 'render-four-map',
       gameSeed: 'render-four-game',
       playerCount: 4,
     });
-    const html = renderToStaticMarkup(
-      <EnemyStrip view={getViewFor(state, 'P1')} text={text} title={text.panel.enemyTeam} />,
+    const fourHtml = renderToStaticMarkup(
+      <EnemyStrip view={getViewFor(four, 'P1')} text={text} title={text.panel.enemyTeam} />,
     );
-    expect(html).toContain(text.player.p2);
-    expect(html).toContain(text.player.p3);
-    expect(html).toContain(text.player.p4);
-    expect(html.match(/<button[^>]*class="hp-avatar(?: |")/g)).toHaveLength(9);
-  });
+    expect(fourHtml).toContain(text.player.p2);
+    expect(fourHtml).toContain(text.player.p3);
+    expect(fourHtml).toContain(text.player.p4);
+    expect(fourHtml.match(/<button[^>]*class="hp-avatar(?: |")/g)).toHaveLength(9);
 
-  it('头像环按剩余血量的比例画弧（满血一圈、空血不画）', () => {
-    const state = battle();
+    // 血量环按比例画弧；阵亡时不画
     const character = findCharacter(state, 'P2:Mikage');
     if (character === null) throw new Error('missing');
-
-    // 半径 20 的周长 ≈ 125.66：半血 = 半圈
     character.hp = character.maxHp / 2;
     const half = renderToStaticMarkup(
       <HpAvatar text={text} character={character} expanded={false} onToggle={noop} />,
     );
+    // 半径 20 的周长 ≈ 125.66：半血 = 半圈
     expect(half).toMatch(/stroke-dasharray="62\.83\d* 125\.66\d*"/);
-
     character.hp = 0;
     character.alive = false;
     const dead = renderToStaticMarkup(
@@ -279,67 +318,40 @@ describe('界面渲染冒烟测试', () => {
     expect(html).toContain('hand-card__seal');
   });
 
-  it('未选择时只有提示胶囊，没有浮动按钮', () => {
+  it('操作提示条：只在"还得再选个参数"时才浮现按钮', () => {
     const state = battle();
-    const html = renderToStaticMarkup(
-      <ActionBar
-        text={text}
-        ui={INITIAL_UI_STATE}
-        highlights={highlightsOf(state)}
-        onDiscard={noop}
-        onChooseStatus={noop}
-      />,
-    );
-    expect(html).toContain(text.prompt.SELECT_CHARACTER);
-    expect(html).not.toContain('map-actions');
-  });
+    const barOf = (ui: UiState): string =>
+      renderToStaticMarkup(
+        <ActionBar
+          text={text}
+          ui={ui}
+          highlights={highlightsOf(state, ui)}
+          onDiscard={noop}
+          onChooseStatus={noop}
+        />,
+      );
 
-  it('选中角色后提示变化，仍未浮现按钮', () => {
-    const state = battle();
-    const ui = clickCharacter(INITIAL_UI_STATE, highlightsOf(state), 'P1:Nana');
-    const html = renderToStaticMarkup(
-      <ActionBar
-        text={text}
-        ui={ui}
-        highlights={highlightsOf(state, ui)}
-        onDiscard={noop}
-        onChooseStatus={noop}
-      />,
-    );
-    expect(html).toContain(text.prompt.SELECT_TARGET_OR_DESTINATION);
-    expect(html).not.toContain('map-actions');
-  });
+    // 未选择：只有提示胶囊
+    const idle = barOf(INITIAL_UI_STATE);
+    expect(idle).toContain(text.prompt.SELECT_CHARACTER);
+    expect(idle).not.toContain('map-actions');
 
-  it('单击执行后不再有确认按钮（浮动层只剩弃牌与状态选择）', () => {
-    const state = battle();
-    const armed = armSkill(clickCharacter(INITIAL_UI_STATE, highlightsOf(state), 'P1:Nana'));
+    // 选中角色：提示变化，仍无浮动按钮
+    const selected = clickCharacter(INITIAL_UI_STATE, highlightsOf(state), 'P1:Nana');
+    const afterSelect = barOf(selected);
+    expect(afterSelect).toContain(text.prompt.SELECT_TARGET_OR_DESTINATION);
+    expect(afterSelect).not.toContain('map-actions');
+
+    // 单击执行后不再需要确认按钮
+    const armed = armSkill(selected);
     const aimed = clickCharacter(armed, highlightsOf(state, armed), 'P2:Mikage');
-    const html = renderToStaticMarkup(
-      <ActionBar
-        text={text}
-        ui={aimed}
-        highlights={highlightsOf(state, aimed)}
-        onDiscard={noop}
-        onChooseStatus={noop}
-      />,
-    );
-    expect(html).not.toContain('map-actions');
-    expect(html).not.toContain(text.action.confirm);
-  });
+    const afterAim = barOf(aimed);
+    expect(afterAim).not.toContain('map-actions');
+    expect(afterAim).not.toContain(text.action.confirm);
 
-  it('选中手牌后浮现弃牌', () => {
-    const state = battle();
-    const ui = selectCard(INITIAL_UI_STATE, state.players.P1.hand[0]!.id, 'FirstAid');
-    const html = renderToStaticMarkup(
-      <ActionBar
-        text={text}
-        ui={ui}
-        highlights={highlightsOf(state, ui)}
-        onDiscard={noop}
-        onChooseStatus={noop}
-      />,
-    );
-    expect(html).toContain(text.action.discard);
+    // 选牌后才浮现「弃牌」
+    const cardUi = selectCard(INITIAL_UI_STATE, state.players.P1.hand[0]!.id, 'FirstAid');
+    expect(barOf(cardUi)).toContain(text.action.discard);
   });
 
   it('默认开局由核心随机部署，直接进入战斗', () => {

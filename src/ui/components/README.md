@@ -16,7 +16,7 @@
 | `ActionLogPanel.tsx` | 行动记录（已过滤对手手牌内容）                                                        |
 | `NewGameScreen.tsx`  | 首页：本地种子、2~4 人选择、创建 / 加入房间                                           |
 | `OnlineRoom.tsx`     | 联机等待页：房间号、人数、邀请链接、连接状态                                          |
-| `ReplayPanel.tsx`    | 对局记录复制、载入、逐步/自动回放                                                     |
+| `ReplayPanel.tsx`    | 对局记录复制、载入、逐步/自动回放；联机进行中不显示复制控件，结束后显示只读全文       |
 | `ResultOverlay.tsx`  | 胜负结算幕布                                                                          |
 | `Manual.tsx`         | 说明书全局浮层（玩法 / 角色 / 功能牌三页）+ 右下角入口图标；数值从定义与 i18n 生成    |
 

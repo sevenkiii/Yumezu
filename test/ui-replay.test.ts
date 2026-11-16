@@ -23,7 +23,7 @@ function playSteps(transport: Transport, steps: number): void {
 }
 
 describe('对局记录', () => {
-  it('序列化 / 解析能来回', () => {
+  it('解析：往返一致、旧记录缺省按两人、坏输入返回 null', () => {
     const record: GameRecord = {
       version: 1,
       mapSeed: 'm',
@@ -33,23 +33,23 @@ describe('对局记录', () => {
       actions: [{ type: 'PASS', player: 'P1' }],
     };
     expect(parseRecord(serializeRecord(record))).toEqual(record);
-  });
 
-  it('旧记录缺少人数时按两人局读取', () => {
-    const parsed = parseRecord(
-      '{"version":1,"mapSeed":"m","gameSeed":"g","maxTurns":null,"actions":[]}',
-    );
-    expect(parsed?.playerCount).toBe(2);
-  });
-
-  it('读不出来的文本返回 null（不抛错）', () => {
-    expect(parseRecord('')).toBeNull();
-    expect(parseRecord('{')).toBeNull();
-    expect(parseRecord('{"version":2}')).toBeNull();
-    expect(parseRecord('{"version":1,"mapSeed":"m","gameSeed":"g","maxTurns":null}')).toBeNull();
+    // 旧记录没有 playerCount 字段
     expect(
-      parseRecord('{"version":1,"mapSeed":"m","gameSeed":"g","maxTurns":null,"actions":[1]}'),
-    ).toBeNull();
+      parseRecord('{"version":1,"mapSeed":"m","gameSeed":"g","maxTurns":null,"actions":[]}')
+        ?.playerCount,
+    ).toBe(2);
+
+    // 坏输入一律 null，绝不抛错
+    for (const bad of [
+      '',
+      '{',
+      '{"version":2}',
+      '{"version":1,"mapSeed":"m","gameSeed":"g","maxTurns":null}',
+      '{"version":1,"mapSeed":"m","gameSeed":"g","maxTurns":null,"actions":[1]}',
+    ]) {
+      expect(parseRecord(bad)).toBeNull();
+    }
   });
 
   it('回放同一份记录能还原出完全相同的局面', () => {
@@ -77,21 +77,19 @@ describe('对局记录', () => {
     expect(replay.getSnapshot().replay).toMatchObject({ step: total, total });
     expect(replay.replayStep()).toBe(false);
     expect(replay.getSnapshot().stateHash).toBe(expectedHash);
-  });
 
-  it('四人局记录会带着人数一起还原', () => {
-    const live = createLocalTransport({
+    // 四人局：人数跟着记录一起还原
+    const four = createLocalTransport({
       mapSeed: 'replay-four-map',
       gameSeed: 'replay-four-game',
       playerCount: 4,
     });
-    playSteps(live, 16);
-    const text = live.getSnapshot().record;
-    expect(parseRecord(text)?.playerCount).toBe(4);
-
-    const replay = newTransport();
-    expect(replay.loadRecord(text)).toBe(true);
-    expect(replay.getSnapshot().view.seats).toEqual(['P1', 'P2', 'P3', 'P4']);
+    playSteps(four, 16);
+    const fourText = four.getSnapshot().record;
+    expect(parseRecord(fourText)?.playerCount).toBe(4);
+    const fourReplay = newTransport();
+    expect(fourReplay.loadRecord(fourText)).toBe(true);
+    expect(fourReplay.getSnapshot().view.seats).toEqual(['P1', 'P2', 'P3', 'P4']);
   });
 
   it('回放可以回退，也可以中途停下继续玩', () => {

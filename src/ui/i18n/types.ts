@@ -149,6 +149,10 @@ export interface UiText {
     readonly replay: {
       readonly title: string;
       readonly hint: string;
+      /** 联机对局：只能复制、不能载入回放。 */
+      readonly readonlyHint: string;
+      /** 联机进行中：完整记录要等结束才下发（避免泄露手牌）。 */
+      readonly pendingHint: string;
       readonly placeholder: string;
       readonly copy: string;
       readonly copied: string;

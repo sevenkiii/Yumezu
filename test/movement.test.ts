@@ -35,26 +35,28 @@ describe('移动规则', () => {
     expect(destinations).toEqual([0, 1, 2, 6, 7, 12]);
   });
 
-  it('不能穿过敌方角色', () => {
-    const state = baseState();
-    const enemy = findCharacter(state, 'P2:Nana');
+  it('不能穿过敌方、可以穿过友方，且不能停在任何已被占据的节点', () => {
+    // 敌方挡在 1：过不去，也停不下
+    const blocked = baseState();
+    const enemy = findCharacter(blocked, 'P2:Nana');
     if (enemy === null) throw new Error('missing enemy');
     enemy.position = 1;
-    const destinations = reachableDestinations(state, nana(state));
-    expect(destinations).not.toContain(1);
-    expect(destinations).not.toContain(2);
-    expect(destinations).toContain(7);
-    expect(destinations).toEqual([0, 6, 7, 12]);
-  });
+    const aroundEnemy = reachableDestinations(blocked, nana(blocked));
+    expect(aroundEnemy).not.toContain(1);
+    expect(aroundEnemy).not.toContain(2);
+    expect(aroundEnemy).toEqual([0, 6, 7, 12]);
+    expect(
+      validateAction(blocked, { type: 'MOVE', player: 'P1', characterId: 'P1:Nana', to: 1 }).ok,
+    ).toBe(false);
 
-  it('可以穿过友方角色，但不能停在友方所在节点', () => {
-    const state = baseState();
-    const ally = findCharacter(state, 'P1:Lily');
+    // 友方挡在 1：可以穿过去（2 可达），但不能停在 1
+    const throughAlly = baseState();
+    const ally = findCharacter(throughAlly, 'P1:Lily');
     if (ally === null) throw new Error('missing ally');
     ally.position = 1;
-    const destinations = reachableDestinations(state, nana(state));
-    expect(destinations).not.toContain(1);
-    expect(destinations).toContain(2);
+    const aroundAlly = reachableDestinations(throughAlly, nana(throughAlly));
+    expect(aroundAlly).not.toContain(1);
+    expect(aroundAlly).toContain(2);
   });
 
   it('被冻结时不能移动', () => {
@@ -73,17 +75,6 @@ describe('移动规则', () => {
       (action) => action.type === 'MOVE' && action.characterId === 'P1:Nana',
     );
     expect(moves).toHaveLength(0);
-  });
-
-  it('不能移动到其他角色所在的节点', () => {
-    const state = baseState();
-    const result = validateAction(state, {
-      type: 'MOVE',
-      player: 'P1',
-      characterId: 'P1:Nana',
-      to: 13,
-    });
-    expect(result.ok).toBe(false);
   });
 
   it('移动 0 格是合法的（等价于放弃移动）', () => {
