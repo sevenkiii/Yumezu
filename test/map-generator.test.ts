@@ -49,11 +49,11 @@ describe('地图生成的质量', () => {
       const map = generateMap('sweep-' + index);
       const stats = map.stats;
 
-      expect(stats.nodeCount).toBe(30);
-      expect(stats.edgeCount).toBeGreaterThanOrEqual(40);
-      expect(stats.edgeCount).toBeLessThanOrEqual(50);
-      expect(stats.diameter).toBeGreaterThanOrEqual(7);
-      expect(stats.diameter).toBeLessThanOrEqual(10);
+      expect(stats.nodeCount).toBe(36);
+      expect(stats.edgeCount).toBeGreaterThanOrEqual(48);
+      expect(stats.edgeCount).toBeLessThanOrEqual(60);
+      expect(stats.diameter).toBeGreaterThanOrEqual(8);
+      expect(stats.diameter).toBeLessThanOrEqual(11);
       expect(stats.degreeOneCount).toBe(0);
       expect(stats.maxDegree).toBeLessThanOrEqual(6);
       expect(stats.bridgeCount).toBe(0);
@@ -69,8 +69,8 @@ describe('地图生成的质量', () => {
       const { P1, P2 } = map.spawnCenters;
       const gap = distance(map.graph, P1, P2);
 
-      expect(gap).toBeGreaterThanOrEqual(6);
-      expect(gap).toBeLessThanOrEqual(8);
+      expect(gap).toBeGreaterThanOrEqual(7);
+      expect(gap).toBeLessThanOrEqual(9);
 
       const regionP1 = reachableWithin(map.graph, P1, 1);
       const regionP2 = reachableWithin(map.graph, P2, 1);
@@ -103,8 +103,14 @@ describe('失败处理', () => {
 });
 
 describe('与 Phase 1 固定地图的一致性', () => {
-  it('固定网格地图也满足同一套结构校验', () => {
-    const result = validateMapStructure(PHASE1_MAP, DEFAULT_MAP_PARAMS);
+  it('固定网格地图也满足同一套结构校验（规模用它自己的规格）', () => {
+    // PHASE1 固定图是 30 节点的测试夹具，规模区间按它自身来，其余阈值沿用默认
+    const result = validateMapStructure(PHASE1_MAP, {
+      ...DEFAULT_MAP_PARAMS,
+      nodeCount: PHASE1_MAP.vertices.length,
+      edgeCountRange: [49, 49],
+      diameterRange: [9, 9],
+    });
     expect(result.ok).toBe(true);
     expect(result.issues).toEqual([]);
     expect(result.stats.edgeCount).toBe(49);

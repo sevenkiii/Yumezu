@@ -32,7 +32,7 @@ describe('Phase 1 固定地图的规模与结构', () => {
 });
 
 describe('Phase 1 出生中心', () => {
-  it('中心距离 7，两区域各 >= 3 且最小距离 >= 5', () => {
+  it('中心距离 7（要求 7 ~ 9），两区域各 >= 3 且最小距离 >= 5', () => {
     expect(distance(PHASE1_MAP, PHASE1_SPAWN_CENTERS.P1, PHASE1_SPAWN_CENTERS.P2)).toBe(7);
 
     const regionA = reachableWithin(PHASE1_MAP, PHASE1_SPAWN_CENTERS.P1, 1);

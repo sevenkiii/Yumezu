@@ -4,7 +4,8 @@ import type { PlayerId, StatusType } from '../core/GameState';
 
 /** 地图画布的逻辑尺寸：节点坐标是 0~1，乘以这个值后落进 SVG viewBox。 */
 export const BOARD_SIZE = 1000;
-export const BOARD_PADDING = 30;
+/** 边缘留白：要放得下放大后的 token 光晕（tokenGlowRadius）与点击热区。 */
+export const BOARD_PADDING = 36;
 
 /**
  * 地图元素的尺寸（SVG 用户单位，viewBox 为 1000 x 1000）。
@@ -15,11 +16,12 @@ export const BOARD_SIZES = {
   edgeBlockedWidth: 6.5,
   edgeSelectableWidth: 8,
   edgeHitWidth: 34,
-  nodeRadius: 20,
-  nodeHitRadius: 40,
-  tokenRadius: 19,
-  tokenRingRadius: 27,
-  tokenGlowRadius: 32,
+  // 地图放大到 36 ~ 52 节点后，同一屏里的节点会变小一点，这里整体上调约 10%
+  nodeRadius: 22,
+  nodeHitRadius: 44,
+  tokenRadius: 21,
+  tokenRingRadius: 29,
+  tokenGlowRadius: 34,
   hpBarWidth: 54,
   hpBarHeight: 9,
   hpBarOffsetY: -52,
@@ -30,7 +32,7 @@ export const BOARD_SIZES = {
   spinnerGap: 14,
   spinnerOffsetY: 36,
   trapSize: 14,
-  shadowRadius: 28,
+  shadowRadius: 30,
   spawnRadius: 58,
 } as const;
 

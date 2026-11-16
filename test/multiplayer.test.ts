@@ -30,8 +30,8 @@ function killPlayer(state: GameState, player: PlayerId): void {
 
 describe('多人混战核心', () => {
   it.each([
-    [3, 36],
-    [4, 42],
+    [3, 44],
+    [4, 52],
   ] as const)('%i 人局每人 3 名角色，地图扩到 %i 个节点', (playerCount, nodeCount) => {
     const state = multiplayerGame(playerCount, 'shape-' + playerCount);
     expect(state.seats).toEqual(['P1', 'P2', 'P3', 'P4'].slice(0, playerCount));

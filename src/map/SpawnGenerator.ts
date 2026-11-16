@@ -23,7 +23,7 @@ export interface SpawnParams {
 
 export const DEFAULT_SPAWN_PARAMS: SpawnParams = {
   regionRadius: 1,
-  distanceRange: [6, 8],
+  distanceRange: [7, 9],
   minRegionGap: 5,
   minRegionSize: 3,
   maxCenterBalance: 1,

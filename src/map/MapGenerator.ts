@@ -49,9 +49,9 @@ export interface MapGenerationParams extends MapValidationParams, SpawnParams {
 }
 
 export const DEFAULT_MAP_PARAMS: MapGenerationParams = {
-  nodeCount: 30,
-  edgeCountRange: [40, 50],
-  diameterRange: [7, 10],
+  nodeCount: 36,
+  edgeCountRange: [48, 60],
+  diameterRange: [8, 11],
   maxDegreeOneNodes: 2,
   maxDegree: 6,
   maxDegreeTwoChain: 4,

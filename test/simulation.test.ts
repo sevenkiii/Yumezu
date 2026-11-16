@@ -39,11 +39,11 @@ describe('Phase 5 统计工具', () => {
   it('每局的地图与出生点都满足 RULES.md 的约束', () => {
     const report = runBatch({ games: 3, seed: 'ci-map', maxTurns: 120 });
     for (const game of report.games) {
-      expect(game.map.nodes).toBe(30);
-      expect(game.map.edges).toBeGreaterThanOrEqual(40);
-      expect(game.map.edges).toBeLessThanOrEqual(50);
-      expect(game.map.spawnDistance).toBeGreaterThanOrEqual(6);
-      expect(game.map.spawnDistance).toBeLessThanOrEqual(8);
+      expect(game.map.nodes).toBe(36);
+      expect(game.map.edges).toBeGreaterThanOrEqual(48);
+      expect(game.map.edges).toBeLessThanOrEqual(60);
+      expect(game.map.spawnDistance).toBeGreaterThanOrEqual(7);
+      expect(game.map.spawnDistance).toBeLessThanOrEqual(9);
       expect(game.roster.P1).toHaveLength(3);
       expect(game.roster.P2).toHaveLength(3);
     }

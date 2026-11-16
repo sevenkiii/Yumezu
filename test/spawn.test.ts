@@ -27,8 +27,8 @@ describe('出生点选择', () => {
 
     for (const candidate of candidates) {
       const { P1, P2 } = candidate.centers;
-      expect(candidate.centerDistance).toBeGreaterThanOrEqual(6);
-      expect(candidate.centerDistance).toBeLessThanOrEqual(8);
+      expect(candidate.centerDistance).toBeGreaterThanOrEqual(7);
+      expect(candidate.centerDistance).toBeLessThanOrEqual(9);
       expect(candidate.balance).toBeLessThanOrEqual(1);
       expect(candidate.regionSizes.P1).toBeGreaterThanOrEqual(3);
       expect(candidate.regionSizes.P2).toBeGreaterThanOrEqual(3);

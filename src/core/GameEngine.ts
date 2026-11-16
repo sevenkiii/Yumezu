@@ -128,8 +128,8 @@ export interface CreateGameFromSeedOptions {
 
 export function createGameFromSeed(options: CreateGameFromSeedOptions): GameState {
   const playerCount = normalizePlayerCount(options.playerCount);
-  // 地图随人数放大：每多一人 +6 个节点，边数与直径按节点数等比放宽
-  const nodeCount = 30 + (playerCount - 2) * 6;
+  // 地图随人数放大：2 人 36 节点，每多一人 +8 个节点；边数与直径按节点数等比放宽
+  const nodeCount = 36 + (playerCount - 2) * 8;
   const scaled = {
     nodeCount,
     edgeCountRange: [Math.round((nodeCount * 4) / 3), Math.round((nodeCount * 5) / 3)] as [
